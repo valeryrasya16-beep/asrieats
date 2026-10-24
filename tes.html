@@ -13,16 +13,9 @@
 <body>
 
 <nav>
-  <!-- AREA LOGO GABUNGAN (ASRIEATS + PERBANAS) -->
   <div class="nav-logo" style="cursor:pointer; display: flex; align-items: center; gap: 10px;" onclick="showPage('homePage')">
-    
-    <!-- 1. LOGO IKON ASRIEATS (MANGKUK & DAUN) -->
     <img src="https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/logo/Emblem%20Daun,%20Garpu,%20dan%20Mangkuk.png" alt="Logo ASRIEATS" style="height: 42px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
-    
-    <!-- Garis Pemisah -->
     <div style="width: 1px; height: 35px; background: #E8E2D9; margin: 0 5px;"></div>
-    
-    <!-- 2. BRAND TEKS ASRIEATS -->
     <div style="display: flex; flex-direction: column; line-height: 1;">
       <span style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--green); letter-spacing: -0.5px;">
         ASRI<span style="color: var(--accent);">EATS</span>
@@ -31,10 +24,7 @@
         by Team Zeva Suka Makan
       </span>
     </div>
-
-    <!-- 3. LOGO PERBANAS -->
     <img src="https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/logo/perbanas-institute-jakarta-logo-logobase.net.png" alt="Logo Perbanas" style="height: 35px; width: auto; object-fit: contain; margin-left: 10px;" onerror="this.style.display='none'">
-    
   </div>
 
   <div class="nav-actions">
@@ -47,7 +37,6 @@
 
 <!-- ================= HALAMAN BERANDA ================= -->
 <div class="page active" id="homePage">
-  
   <div class="hero home-hero">
     <div class="hero-slider">
       <div class="hero-bg active" style="background-image: url('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/background/foto%20ta%201..png');"></div>
@@ -129,7 +118,13 @@
     
     <div class="form-section">
       <div class="form-group"><label>Nama Pemesan</label><input type="text" id="namaInput"></div>
-      <div class="form-group"><label>Nomor Meja</label><input type="text" id="mejaInput" placeholder="Contoh: A-12"></div>
+      
+      <!-- UPDATE: Nomor Meja pakai type="number" dan validasi oninput -->
+      <div class="form-group">
+        <label>Nomor Meja</label>
+        <input type="number" id="mejaInput" placeholder="Contoh: 8" min="1" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+      
       <div class="form-group"><label>Catatan (Opsional)</label><input type="text" id="catatInput"></div>
       
       <div class="form-group" id="voucherContainer" style="display:none; background:#FAF8F3; padding:15px; border:1px solid var(--accent); border-radius:8px;">
@@ -197,7 +192,7 @@
   </div>
 </div>
 
-<!-- MODAL KONFIRMASI HAPUS (CUSTOM) -->
+<!-- MODAL KONFIRMASI HAPUS -->
 <div class="modal-overlay" id="confirmDeleteModal" style="z-index: 3000;">
   <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px 20px;">
     <div style="font-size: 40px; color: var(--danger); margin-bottom: 15px;">
@@ -213,38 +208,32 @@
   </div>
 </div>
 
-<!-- ================= FOOTER ================= -->
+<!-- FOOTER -->
 <footer class="site-footer">
   <div class="footer-content">
-    
     <div class="footer-brand">
       <h2>ASRI<span>EATS</span></h2>
       <p>Pusat Kuliner Taman Asri<br>Perbanas Institute</p>
     </div>
-
     <div class="footer-links">
       <h4>Navigasi</h4>
       <a href="#" onclick="showPage('homePage')">Beranda</a>
       <a href="#" onclick="showPage('menuPage')">Pesan Makanan</a>
       <a href="#" onclick="openProfileModal()">Profil Saya</a>
     </div>
-
     <div class="footer-links">
       <h4>Bantuan</h4>
       <a href="https://api.whatsapp.com/send/?phone=628119990997">Hubungi Kami</a>
     </div>
-
     <div class="footer-social">
       <h4>Ikuti Kami</h4>
       <div class="social-icons">
-        <a href="https://www.instagram.com/perbanas.institute?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw==" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.instagram.com/perbanas.institute" title="Instagram"><i class="fab fa-instagram"></i></a>
         <a href="https://api.whatsapp.com/send/?phone=628119990997" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-        <a href="https://www.tiktok.com/@perbanasinstitute?_r=1&_t=ZS-9AolbY36uNF" title="TikTok"><i class="fab fa-tiktok"></i></a>
+        <a href="https://www.tiktok.com/@perbanasinstitute" title="TikTok"><i class="fab fa-tiktok"></i></a>
       </div>
     </div>
-
   </div>
-
   <div class="footer-bottom">
     <p>&copy; 2026 ASRIEATS by Team Zeva Suka Makan. All Rights Reserved.</p>
   </div>
