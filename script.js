@@ -257,7 +257,7 @@ async function executeDelete() {
 
   if (!error) {
     showToast('Riwayat berhasil dihapus'); 
-    openProfileModal(); // Refresh tampilan riwayat di dalam profil
+    openProfileModal(); 
   } else { 
     alert('Gagal menghapus riwayat'); 
   }
@@ -370,8 +370,14 @@ function proceedToPayment() {
     showToast('Nama Pemesan minimal 3 karakter!'); 
     return; 
   }
+  
+  // VALIDASI NOMOR MEJA (HANYA ANGKA)
   if (!meja) { 
     showToast('Nomor Meja harus diisi!'); 
+    return; 
+  }
+  if (!/^\d+$/.test(meja)) {
+    showToast('Nomor Meja hanya boleh berisi angka!'); 
     return; 
   }
 
@@ -471,7 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('navUserName').textContent = USER_NAME;
   renderHomeCards();
 
-  // Mulai animasi slider
   const slides = document.querySelectorAll('.hero-bg');
   if (slides.length > 0) {
     let currentSlide = 0;
@@ -479,6 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
       slides[currentSlide].classList.remove('active');
       currentSlide = (currentSlide + 1) % slides.length;
       slides[currentSlide].classList.add('active');
-    }, 4000); // Ganti foto setiap 4 detik
+    }, 4000); 
   }
 });
