@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - ASRIEATS Perbanas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F9F6F0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  .card { background: #fff; padding: 40px; border: 1px solid #E8E2D9; width: 100%; max-width: 400px; text-align: center; border-radius: 12px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 5px; color: #7C9062; }
+  h1 span { color: #F4A261; }
+  p { color: #8E8E8E; font-size: 14px; margin-bottom: 30px; }
+  .role-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .role-btn { flex: 1; padding: 12px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; color: #8E8E8E; transition: 0.2s; border-radius: 6px; }
+  .role-btn.active { border-color: #7C9062; color: #7C9062; background: #F9F6F0; }
+  input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; border-radius: 6px; }
+  input:focus { border-color: #7C9062; }
+  button.submit { width: 100%; padding: 14px; background: #E63946; color: #fff; border: none; font-weight: 600; cursor: pointer; font-size: 15px; border-radius: 6px; transition: 0.2s; }
+  button.submit:hover { background: #C1121F; }
+  .error { color: red; font-size: 13px; margin-bottom: 15px; display: none; background: #fee; padding: 10px; border: 1px solid #fcc; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ASRI<span>EATS</span></h1>
+  <p>Perbanas Institute - Silakan masuk untuk memesan</p>
+  <div id="error" class="error"></div>
+
+  <div class="role-tabs">
+    <button class="role-btn active" id="tabMhs" onclick="setRole('mahasiswa')">Mahasiswa</button>
+    <button class="role-btn" id="tabGuest" onclick="setRole('guest')">Guest / Umum</button>
+  </div>
+
+  <input type="text" id="userId" placeholder="NIM" autocomplete="off">
+  <input type="password" id="userPw" placeholder="Password Portal">
+  
+  <button class="submit" onclick="handleLogin()">Masuk ke Aplikasi</button>
+</div>
+
+<script>
+const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let role = 'mahasiswa';
+
+function setRole(r) {
+  role = r;
+  document.getElementById('tabMhs').classList.toggle('active', r === 'mahasiswa');
+  document.getElementById('tabGuest').classList.toggle('active', r === 'guest');
+  const inputId = document.getElementById('userId');
+  const inputPw = document.getElementById('userPw');
+  
+  if (r === 'guest') {
+    inputId.placeholder = 'Nama Anda (Guest)';
+    inputPw.style.display = 'none';
+  } else {
+    inputId.placeholder = 'NIM (Nomor Induk Mahasiswa)';
+    inputPw.style.display = 'block';
+  }
+}
+
+async function handleLogin() {
+  const id = document.getElementById('userId').value.trim();
+  const pw = document.getElementById('userPw').value;
+  const err = document.getElementById('error');
+  const btn = document.querySelector('button.submit');
+
+  if (!id) { err.textContent = "Nama/NIM tidak boleh kosong!"; err.style.display = 'block'; return; }
+
+  // TAMBAHAN: Validasi Minimal 3 Karakter (Khusus Guest)
+  if (role === 'guest' && id.length < 3) {
+    err.textContent = "Nama Guest minimal 3 karakter ya!"; 
+    err.style.display = 'block'; 
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Memeriksa...";
+  err.style.display = 'none';
+
+  if (role === 'mahasiswa') {
+    if (!pw) { err.textContent = "Password wajib diisi!"; err.style.display = 'block'; btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return; }
+
+    const { data: user, error: dbErr } = await sb.from('users').select('*').eq('id', id).single();
+
+    if (dbErr || !user) {
+      err.textContent = "NIM tidak terdaftar di sistem!"; err.style.display = 'block'; 
+      btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return;
+    }
+
+    if (user.password !== pw) {
+      err.textContent = "Password salah!"; err.style.display = 'block'; 
+      btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return;
+    }
+
+    sessionStorage.setItem('user_id', user.id);
+    sessionStorage.setItem('user_name', user.nama); 
+    sessionStorage.setItem('user_role', 'mahasiswa');
+
+  } else {
+    // --- LOGIKA GUEST (Bikin ID unik tiap login biar gak nyangkut) ---
+    const uniqueGuestId = 'guest_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    
+    await sb.from('users').insert([{ id: uniqueGuestId, nama: id, role: 'guest', points: 0 }]);
+
+    sessionStorage.setItem('user_id', uniqueGuestId); 
+    sessionStorage.setItem('user_name', id); 
+    sessionStorage.setItem('user_role', 'guest');
+  }
+
+  window.location.href = 'tes.html';
+}
+
+if (sessionStorage.getItem('user_id')) {
+  window.location.href = 'tes.html';
+}
+</script>
+</body>
+</html>

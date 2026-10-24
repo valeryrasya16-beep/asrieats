@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Kasir - ASRIEATS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  .card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+  h1 { color: #1a6b4a; font-size: 24px; margin-bottom: 5px; }
+  p { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+  input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; outline: none; font-family: inherit; }
+  button { width: 100%; padding: 14px; background: #1a6b4a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  button:hover { background: #145238; }
+  .error { color: red; font-size: 13px; margin-bottom: 10px; display: none; background: #fee; padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ASRIEATS Kasir</h1>
+  <p>Perbanas Institute</p>
+  <div id="error" class="error"></div>
+  
+  <input type="text" id="kasirName" placeholder="Nama Kasir">
+  <select id="kantinSelect">
+    <option value="">-- Pilih Warung --</option>
+    <option value="warung_nusantara">Warung Nusantara</option>
+    <option value="warung_sederhana">Warung Sederhana</option>
+    <option value="warung_modern">Warung Modern</option>
+    <option value="warung_bakso_joss">Warung Bakso Joss</option>
+    <option value="warung_mie_ayam">Warung Mie Ayam</option>
+    <option value="warung_wareg">Warung Wareg</option>
+  </select>
+  <input type="password" id="kasirPw" placeholder="Password Warung">
+  
+  <button onclick="loginKasir()">Masuk Dashboard</button>
+</div>
+
+<script>
+const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function loginKasir() {
+  const name = document.getElementById('kasirName').value.trim();
+  const kantin = document.getElementById('kantinSelect').value;
+  const pw = document.getElementById('kasirPw').value;
+  const err = document.getElementById('error');
+
+  if(!name || !kantin || !pw) { err.textContent="Isi semua data!"; err.style.display='block'; return; }
+
+  const { data, error } = await sb.from('kantins').select('password').eq('id', kantin).single();
+  
+  if (error || !data) { err.textContent="Warung tidak ditemukan"; err.style.display='block'; return; }
+  if (data.password !== pw) { err.textContent="Password salah!"; err.style.display='block'; return; }
+
+  sessionStorage.setItem('kasir_name', name);
+  sessionStorage.setItem('kantin_id', kantin);
+  window.location.href = 'kasir.html';
+}
+</script>
+</body>
+</html>

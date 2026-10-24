@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir - ASRIEATS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; padding: 24px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .brand h1 { font-size: 22px; color: #1a6b4a; }
+  .btn-logout { background: #dc4a3d; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+  
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+  .stat-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+  .stat-title { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-val { font-size: 24px; font-weight: 700; margin-top: 5px; }
+  .stat-icon { font-size: 24px; color: #1a6b4a; background: #e8f5ee; padding: 12px; border-radius: 50%; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tab-btn { padding: 10px 20px; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; transition: 0.2s; }
+  .tab-btn.active { background: #1a6b4a; color: white; border-color: #1a6b4a; }
+
+  .filter-box { background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; display: flex; align-items: center; gap: 15px; }
+  .filter-box select { padding: 8px 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 14px; outline: none; }
+
+  .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 800px; }
+  th { text-align: left; padding: 15px 20px; background: #f1f5f9; font-size: 13px; color: #64748b; font-weight: 600; }
+  td { padding: 15px 20px; font-size: 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .badge-tipe { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; margin-left: 5px; }
+  .badge-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534; font-weight: 600; }
+  .btn-action { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px; }
+  .btn-print { background: #64748b; color: white; }
+  .btn-done { background: #1a6b4a; color: white; }
+  .btn-del { background: #fee2e2; color: #dc4a3d; }
+  
+  @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; left: 0; top: 0; width: 80mm; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand"><h1 id="headerTitle">ASRIEATS Kasir</h1></div>
+  <button class="btn-logout" onclick="logout()">Logout</button>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div>
+      <div class="stat-title">Pesanan Aktif</div>
+      <div class="stat-val" id="orderCount">0</div>
+    </div>
+    <i class="fas fa-receipt stat-icon"></i>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-title">Pendapatan (Sesuai Filter)</div>
+      <div class="stat-val" id="revenueTotal">Rp 0</div>
+    </div>
+    <i class="fas fa-wallet stat-icon"></i>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Pesanan Aktif</button>
+  <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">Riwayat Selesai</button>
+</div>
+
+<div class="filter-box">
+  <label><i class="fas fa-filter"></i> Filter Pendapatan:</label>
+  <select id="filterBulan" onchange="fetchData()">
+    <option value="all">Semua Waktu</option>
+    <option value="0">Januari</option>
+    <option value="1">Februari</option>
+    <option value="2">Maret</option>
+    <option value="3">April</option>
+    <option value="4">Mei</option>
+    <option value="5">Juni</option>
+    <option value="6">Juli</option>
+    <option value="7">Agustus</option>
+    <option value="8">September</option>
+    <option value="9">Oktober</option>
+    <option value="10">November</option>
+    <option value="11">Desember</option>
+  </select>
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr><th>Antrean</th><th>Waktu</th><th>Meja / Nama</th><th>Pesanan</th><th>Total</th><th>Aksi</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div id="printArea" style="display:none;"></div>
+<div id="toast" style="position:fixed; bottom:20px; right:20px; background:#1e293b; color:white; padding:10px 20px; border-radius:20px; opacity:0; transition:0.3s;"></div>
+
+<script>
+const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const KANTIN_ID = sessionStorage.getItem('kantin_id');
+const KASIR_NAME = sessionStorage.getItem('kasir_name');
+const KANTIN_NAMES = { 
+  'warung_nusantara': 'Warung Nusantara', 
+  'warung_sederhana': 'Warung Sederhana', 
+  'warung_modern': 'Warung Modern',
+  'warung_bakso_joss': 'Warung Bakso Joss',
+  'warung_mie_ayam': 'Warung Mie Ayam',
+  'warung_wareg': 'Warung Wareg'
+};
+
+let allOrders = [];
+let currentTab = 'active'; 
+
+function checkAuth() {
+  if (!KANTIN_ID || !KASIR_NAME) { window.location.href = 'login_kasir.html'; return; }
+  document.getElementById('headerTitle').textContent = (KANTIN_NAMES[KANTIN_ID] || 'Kasir') + ' - ' + KASIR_NAME;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 2500);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+  document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+  renderTable();
+}
+
+async function fetchData() {
+  const { data } = await sb.from('orders').select('*').eq('kantin_id', KANTIN_ID).order('created_at', { ascending: false });
+  allOrders = data || [];
+
+  const activeOrders = allOrders.filter(o => o.status !== 'Selesai');
+  document.getElementById('orderCount').textContent = activeOrders.length;
+
+  const filterBln = document.getElementById('filterBulan').value;
+  let rev = 0;
+  allOrders.forEach(o => {
+    if (o.status === 'Selesai') {
+      const orderDate = new Date(o.created_at);
+      if (filterBln === 'all' || orderDate.getMonth().toString() === filterBln) {
+        rev += o.total_amount;
+      }
+    }
+  });
+  document.getElementById('revenueTotal').textContent = 'Rp ' + rev.toLocaleString();
+
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  
+  let filteredOrders = currentTab === 'active' 
+    ? allOrders.filter(o => o.status !== 'Selesai') 
+    : allOrders.filter(o => o.status === 'Selesai');
+
+  if (filteredOrders.length === 0) { 
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px;">${currentTab === 'active' ? 'Tidak ada antrean aktif.' : 'Belum ada riwayat selesai.'}</td></tr>`; 
+    return; 
+  }
+
+  tbody.innerHTML = filteredOrders.map(o => {
+    const d = new Date(o.created_at);
+    const waktu = d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    
+    let txt = o.items ? o.items.split(';').map(x => x.split('|')[0] + ' (x' + x.split('|')[2] + ')').join(', ') : '-';
+    const tipeBadge = o.tipe_user === 'mahasiswa' ? '<span class="badge-tipe" style="background:#dbeafe;color:#1e40af">Mhs</span>' : '<span class="badge-tipe" style="background:#fef3c7;color:#92400e">Guest</span>';
+    const statusBadge = o.status === 'Selesai' ? '<span class="badge-status">Selesai</span>' : '';
+
+    let actionButtons = `<button class="btn-action btn-print" onclick="printStruk(${o.id})">Print</button>`;
+    if (currentTab === 'active') {
+      actionButtons += `
+        <button class="btn-action btn-done" onclick="markDone(${o.id})">Selesai</button>
+        <button class="btn-action btn-del" onclick="delOrder(${o.id})">Hapus</button>
+      `;
+    } else {
+      actionButtons += `<button class="btn-action btn-del" onclick="delOrder(${o.id})">Hapus</button>`;
+    }
+
+    return `<tr>
+      <td><b>#${o.no_antrean}</b></td>
+      <td style="color:#64748b; font-size:12px;">${waktu}</td>
+      <td>Meja ${o.no_meja} <br><span style="font-size:12px; color:#64748b">${o.nama_pemesan} ${tipeBadge} ${statusBadge}</span></td>
+      <td style="font-size:12px;">${txt}</td>
+      <td><b>Rp ${o.total_amount.toLocaleString()}</b></td>
+      <td>${actionButtons}</td>
+    </tr>`;
+  }).join('');
+}
+
+function printStruk(id) {
+  const o = allOrders.find(x => x.id === id);
+  if(!o) return;
+  const d = new Date(o.created_at);
+  const waktu = d.toLocaleDateString('id-ID', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  
+  const items = o.items.split(';').map(row => {
+    const p = row.split('|');
+    return `<tr><td>${p[0]}</td><td align="center">${p[2]}</td><td align="right">Rp ${parseInt(p[3]).toLocaleString()}</td></tr>`;
+  }).join('');
+
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = `
+    <div style="font-family:monospace; width:80mm; padding:5mm; color:#000;">
+      <center><h2>${KANTIN_NAMES[KANTIN_ID].toUpperCase()}</h2><p>Struk Pesanan</p></center>
+      <hr style="border-top:1px dashed #000;">
+      <p>Waktu: ${waktu}</p>
+      <p>Nama: ${o.nama_pemesan} (${o.tipe_user})</p>
+      <p>Meja: ${o.no_meja} | Antrean: ${o.no_antrean}</p>
+      <hr style="border-top:1px dashed #000;">
+      <table width="100%"><tr><th align="left">Item</th><th>Qty</th><th align="right">Total</th></tr>${items}</table>
+      <hr style="border-top:1px dashed #000;">
+      <h3 align="right">Total: Rp ${o.total_amount.toLocaleString()}</h3>
+      <center><p style="margin-top:20px;">Status: ${o.status}</p></center>
+    </div>
+  `;
+  printArea.style.display = 'block';
+  window.print();
+  printArea.style.display = 'none';
+}
+
+async function markDone(id) {
+  if(confirm('Selesaikan pesanan ini? Pesanan akan pindah ke tab Riwayat Selesai.')) {
+    await sb.from('orders').update({ status: 'Selesai' }).eq('id', id);
+    showToast('Pesanan Selesai!'); 
+    fetchData();
+  }
+}
+
+async function delOrder(id) {
+  if(confirm('Hapus pesanan ini permanen?')) {
+    await sb.from('orders').delete().eq('id', id);
+    showToast('Pesanan dihapus'); 
+    fetchData();
+  }
+}
+
+function logout() { sessionStorage.clear(); window.location.href = 'login_kasir.html'; }
+
+checkAuth();
+if (KANTIN_ID) {
+  fetchData();
+  sb.channel('realtime-kasir').on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `kantin_id=eq.${KANTIN_ID}` }, () => fetchData()).subscribe();
+}
+</script>
+</body>
+</html>

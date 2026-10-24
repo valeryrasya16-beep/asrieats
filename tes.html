@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASRIEATS - Perbanas Institute</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+</head>
+<body>
+
+<nav>
+  <!-- AREA LOGO GABUNGAN (ASRIEATS + PERBANAS) -->
+  <div class="nav-logo" style="cursor:pointer; display: flex; align-items: center; gap: 10px;" onclick="showPage('homePage')">
+    
+    <!-- 1. LOGO IKON ASRIEATS (MANGKUK & DAUN) -->
+    <img src="https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/logo/Emblem%20Daun,%20Garpu,%20dan%20Mangkuk.png" alt="Logo ASRIEATS" style="height: 42px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
+    
+    <!-- Garis Pemisah -->
+    <div style="width: 1px; height: 35px; background: #E8E2D9; margin: 0 5px;"></div>
+    
+    <!-- 2. BRAND TEKS ASRIEATS -->
+    <div style="display: flex; flex-direction: column; line-height: 1;">
+      <span style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--green); letter-spacing: -0.5px;">
+        ASRI<span style="color: var(--accent);">EATS</span>
+      </span>
+      <span style="font-size: 9px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px;">
+        by Team Zeva Suka Makan
+      </span>
+    </div>
+
+    <!-- 3. LOGO PERBANAS -->
+    <img src="https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/logo/perbanas-institute-jakarta-logo-logobase.net.png" alt="Logo Perbanas" style="height: 35px; width: auto; object-fit: contain; margin-left: 10px;" onerror="this.style.display='none'">
+    
+  </div>
+
+  <div class="nav-actions">
+    <button class="nav-btn" onclick="showPage('homePage')" style="border:none;">Beranda</button>
+    <button class="nav-btn" onclick="showPage('menuPage')" style="border:none;">Menu</button>
+    <button class="nav-btn" onclick="openProfileModal()" style="margin-left: 15px;"><i class="fas fa-user"></i> <span id="navUserName">Profil</span></button>
+    <button class="nav-btn primary" onclick="showCart()"><i class="fas fa-shopping-cart"></i> Keranjang (<span id="cartBadge">0</span>)</button>
+  </div>
+</nav>
+
+<!-- ================= HALAMAN BERANDA ================= -->
+<div class="page active" id="homePage">
+  
+  <div class="hero home-hero">
+    <div class="hero-slider">
+      <div class="hero-bg active" style="background-image: url('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/background/foto%20ta%201..png');"></div>
+      <div class="hero-bg" style="background-image: url('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/background/foto%20ta%202..png');"></div>
+      <div class="hero-bg" style="background-image: url('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/background/foto%20ta%203..png');"></div>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>Jelajahi <em>Taman Asri</em></h1>
+      <p>Pusat kuliner dan ruang sosial berkonsep hijau yang ikonik di Perbanas Institute.</p>
+    </div>
+  </div>
+
+  <div class="about-section">
+    <h2 class="about-title">Taman Asri (TA)</h2>
+    <p class="about-subtitle">Kantin Berkonsep Hijau & Pusat Sosial Ikonik di Perbanas Institute</p>
+    <p class="about-desc">
+      Selamat datang di Taman Asri (TA), pusat kuliner dan ruang sosial berkonsep hijau yang ikonik, berlokasi di dalam kampus Perbanas Institute di kawasan Setiabudi, Jakarta Selatan.
+    </p>
+
+    <h3 class="about-heading">Mengapa Memilih TA?</h3>
+    <ul class="about-list">
+      <li><strong>Konsep Taman Terbuka:</strong> Dikenal akrab oleh warga lokal dengan sebutan "TA", tempat ini menawarkan tata letak taman/ruang terbuka yang dipenuhi pepohonan dan area teduh. Suasana ini menjadikannya sebagai tempat nongkrong yang sangat populer dan <em>instagramable</em> bagi para mahasiswa.</li>
+      <li><strong>Beragam Tenant Kuliner:</strong> Kami menyediakan berbagai macam pilihan makanan dan minuman yang higienis, berlabel halal, dan pastinya ramah di kantong mahasiswa. Anda dapat menemukan berbagai tenant menarik yang menyajikan menu favorit.</li>
+      <li><strong>Fasilitas & Pusat Aktivitas:</strong> Lebih dari sekadar tempat makan, area ini sering kali terintegrasi dengan berbagai kegiatan kemahasiswaan kampus. TA juga menyediakan ruang untuk berbagai acara (<em>event spaces</em>).</li>
+    </ul>
+
+    <div class="location-box">
+      <h3 class="about-heading" style="margin-top:0;"><i class="fas fa-map-marker-alt"></i> Lokasi Kami</h3>
+      <p class="about-desc" style="margin-bottom:0;">
+        Kunjungi kami di:<br>
+        <strong>Perbanas Institute</strong><br>
+        Jl. Perbanas, Setiabudi, Jakarta Selatan.
+      </p>
+    </div>
+  </div>
+
+  <div class="canteen-section">
+    <div class="section-title">Daftar Tenant Kuliner</div>
+    <div class="canteen-grid" id="homeCanteenGrid"></div>
+  </div>
+</div>
+
+<!-- ================= HALAMAN MENU ================= -->
+<div class="page" id="menuPage">
+  <div class="hero" style="padding: 4rem 5% 3rem;">
+    <h1>Menu <em>Pilihan</em></h1>
+    <select id="kantinSelect" onchange="pickKantin(this.value)" style="margin-top: 15px;">
+      <option value="">Silahkan Pilih Warung</option>
+      <option value="warung_nusantara">Warung Nusantara</option>
+      <option value="warung_sederhana">Warung Sederhana</option>
+      <option value="warung_modern">Warung Modern</option>
+      <option value="warung_bakso_joss">Warung Bakso Joss</option>
+      <option value="warung_mie_ayam">Warung Mie Ayam</option>
+      <option value="warung_wareg">Warung Wareg</option>
+    </select>
+  </div>
+  
+  <div class="cats" id="catTabs">
+    <button class="cat-btn active" onclick="filterCat('semua', this)">Semua</button>
+    <button class="cat-btn" onclick="filterCat('makanan', this)">Makanan</button>
+    <button class="cat-btn" onclick="filterCat('minuman', this)">Minuman</button>
+    <button class="cat-btn" onclick="filterCat('snack', this)">Snack</button>
+  </div>
+
+  <div class="menu-section">
+    <div class="section-title" id="sectionTitle">Pilih Warung Terlebih Dahulu</div>
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+</div>
+
+<!-- ================= HALAMAN KERANJANG & PEMBAYARAN ================= -->
+<div class="page" id="cartPage">
+  <div class="cart-page">
+    <button class="btn-secondary btn-back" onclick="showPage('menuPage')">← Kembali ke Menu</button>
+    <div class="cart-title">Keranjang Anda</div>
+    <div id="cartItems"></div>
+    <div id="cartSummary"></div>
+    
+    <div class="form-section">
+      <div class="form-group"><label>Nama Pemesan</label><input type="text" id="namaInput"></div>
+      <div class="form-group"><label>Nomor Meja</label><input type="text" id="mejaInput" placeholder="Contoh: A-12"></div>
+      <div class="form-group"><label>Catatan (Opsional)</label><input type="text" id="catatInput"></div>
+      
+      <div class="form-group" id="voucherContainer" style="display:none; background:#FAF8F3; padding:15px; border:1px solid var(--accent); border-radius:8px;">
+        <label style="color:var(--text); font-size:14px;"><i class="fas fa-ticket-alt"></i> Voucher Warung Ini</label>
+        <p style="font-size:12px; margin-bottom:10px;">Poin Anda di warung ini: <b id="userPointsDisplay">0</b> Poin.</p>
+        <div id="voucherList"></div>
+      </div>
+
+      <input type="hidden" id="antriInput" readonly>
+      <button class="btn-primary" onclick="proceedToPayment()">Lanjut ke Pembayaran</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="paymentPage">
+  <div class="payment-page">
+    <button class="btn-secondary btn-back" onclick="showPage('cartPage')">← Kembali</button>
+    <div class="payment-card">
+      <h2 style="font-family:'Playfair Display',serif; font-weight:500; margin-bottom:10px;">Pembayaran</h2>
+      <div class="qris-wrapper"><img src="Nodetropers Shop QRIS.jpeg" class="qris-img" /></div>
+      <div class="amount-badge" id="payAmount">Rp 0</div>
+      <div class="order-info" id="orderInfoPay"></div>
+      
+      <button class="btn-primary" onclick="confirmPayment()">Konfirmasi Pembayaran</button>
+      <button class="btn-secondary" onclick="showPage('cartPage')">Batalkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="successPage">
+  <div class="success-page">
+    <div class="success-card">
+      <h1 style="font-family:'Playfair Display',serif;">Pesanan Diterima</h1>
+      <div class="ticket">
+        <p style="font-size:14px; color:var(--muted); margin-bottom:10px;">Nomor Antrean</p>
+        <div class="ticket-num" id="successAntrean">—</div>
+      </div>
+      <div class="order-info" id="successInfo"></div>
+      <button class="btn-primary" onclick="resetAll()">Pesan Lagi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROFIL -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="document.getElementById('profileModal').classList.remove('active')">✕</button>
+    <h2 style="font-family:'Playfair Display',serif; text-align:center; margin-bottom:20px;">Profil Anda</h2>
+    
+    <div class="point-card" id="pointCardDisplay" style="display:none;">
+      <p style="font-size:14px; opacity:0.8;" id="pointCardTitle">Total Poin</p>
+      <h2 id="modalPoints">0</h2>
+      <p style="font-size:12px;" id="pointCardSub">Pilih warung untuk melihat poin</p>
+    </div>
+    
+    <div class="point-card" id="guestCardDisplay" style="display:none; background:linear-gradient(135deg, #64748b, #94a3b8);">
+      <p style="font-size:14px;">Status Akun: <b>Guest</b></p>
+      <p style="font-size:12px; margin-top:5px;">Poin hanya berlaku untuk Mahasiswa.</p>
+    </div>
+
+    <h3 style="margin-bottom:15px; font-size:16px;">Riwayat Pesanan</h3>
+    <div id="historyList" style="max-height: 250px; overflow-y: auto;"></div>
+    
+    <button class="btn-secondary" onclick="logout()" style="margin-top:20px;">Logout</button>
+  </div>
+</div>
+
+<!-- MODAL KONFIRMASI HAPUS (CUSTOM) -->
+<div class="modal-overlay" id="confirmDeleteModal" style="z-index: 3000;">
+  <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px 20px;">
+    <div style="font-size: 40px; color: var(--danger); margin-bottom: 15px;">
+      <i class="fas fa-trash-alt"></i>
+    </div>
+    <h3 style="font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 10px; color: var(--text);">Hapus Riwayat?</h3>
+    <p style="color: var(--muted); font-size: 14px; margin-bottom: 25px; line-height: 1.5;">Tindakan ini tidak dapat dibatalkan. Yakin ingin menghapus pesanan ini dari riwayat Anda?</p>
+    
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-secondary" onclick="closeConfirmModal()" style="margin-top: 0;">Batal</button>
+      <button class="btn-primary" id="btnConfirmDelete" onclick="executeDelete()" style="margin-top: 0; background: var(--danger); border-color: var(--danger);">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="footer-content">
+    
+    <div class="footer-brand">
+      <h2>ASRI<span>EATS</span></h2>
+      <p>Pusat Kuliner Taman Asri<br>Perbanas Institute</p>
+    </div>
+
+    <div class="footer-links">
+      <h4>Navigasi</h4>
+      <a href="#" onclick="showPage('homePage')">Beranda</a>
+      <a href="#" onclick="showPage('menuPage')">Pesan Makanan</a>
+      <a href="#" onclick="openProfileModal()">Profil Saya</a>
+    </div>
+
+    <div class="footer-links">
+      <h4>Bantuan</h4>
+      <a href="https://api.whatsapp.com/send/?phone=628119990997">Hubungi Kami</a>
+    </div>
+
+    <div class="footer-social">
+      <h4>Ikuti Kami</h4>
+      <div class="social-icons">
+        <a href="https://www.instagram.com/perbanas.institute?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw==" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://api.whatsapp.com/send/?phone=628119990997" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://www.tiktok.com/@perbanasinstitute?_r=1&_t=ZS-9AolbY36uNF" title="TikTok"><i class="fab fa-tiktok"></i></a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <p>&copy; 2026 ASRIEATS by Team Zeva Suka Makan. All Rights Reserved.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
