@@ -5,21 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - ASRIEATS Perbanas</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: 'Inter', sans-serif; background: #F9F6F0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-  .card { background: #fff; padding: 40px; border: 1px solid #E8E2D9; width: 100%; max-width: 400px; text-align: center; border-radius: 12px; }
+  body { font-family: 'Inter', sans-serif; background: #F9F6F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; box-sizing: border-box; }
+  .card { background: #fff; padding: 40px; border: 1px solid #E8E2D9; width: 100%; max-width: 400px; text-align: center; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; z-index: 10; }
   h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 5px; color: #7C9062; }
   h1 span { color: #F4A261; }
   p { color: #8E8E8E; font-size: 14px; margin-bottom: 30px; }
+  
   .role-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
   .role-btn { flex: 1; padding: 12px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; color: #8E8E8E; transition: 0.2s; border-radius: 6px; }
   .role-btn.active { border-color: #7C9062; color: #7C9062; background: #F9F6F0; }
+  
   input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; border-radius: 6px; }
   input:focus { border-color: #7C9062; }
+  
   button.submit { width: 100%; padding: 14px; background: #E63946; color: #fff; border: none; font-weight: 600; cursor: pointer; font-size: 15px; border-radius: 6px; transition: 0.2s; }
   button.submit:hover { background: #C1121F; }
+  button.submit:disabled { background: #fca5a5; cursor: not-allowed; }
+  
   .error { color: red; font-size: 13px; margin-bottom: 15px; display: none; background: #fee; padding: 10px; border: 1px solid #fcc; border-radius: 6px; }
+  
+  .register-link { margin-top: 20px; font-size: 14px; color: #8E8E8E; }
+  .register-link a { color: #E63946; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .register-link a:hover { text-decoration: underline; }
+
+  .divider { display: flex; align-items: center; text-align: center; margin: 25px 0; color: #ccc; font-size: 12px; font-weight: 600; }
+  .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #E8E2D9; }
+  .divider:not(:empty)::before { margin-right: 15px; }
+  .divider:not(:empty)::after { margin-left: 15px; }
+
+  .quick-guest-box { background: #F9F6F0; padding: 20px; border-radius: 8px; border: 1px dashed #E8E2D9; }
+  .quick-guest-box p { margin-bottom: 12px; font-size: 13px; color: #7C9062; font-weight: 600; }
+  .quick-guest-box input { margin-bottom: 10px; background: #fff; padding: 12px; }
+  .quick-guest-box button { background: #7C9062; padding: 12px; font-size: 14px; }
+  .quick-guest-box button:hover { background: #6a7b52; }
+
+  /* MODAL STYLES */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: #fff; padding: 30px; width: 90%; max-width: 400px; border-radius: 16px; text-align: left; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #8E8E8E; }
 </style>
 </head>
 <body>
@@ -30,13 +57,115 @@
 
   <div class="role-tabs">
     <button class="role-btn active" id="tabMhs" onclick="setRole('mahasiswa')">Mahasiswa</button>
-    <button class="role-btn" id="tabGuest" onclick="setRole('guest')">Guest / Umum</button>
+    <button class="role-btn" id="tabPelanggan" onclick="setRole('pelanggan')">Pelanggan</button>
   </div>
 
+  <!-- INPUT LOGIN -->
   <input type="text" id="userId" placeholder="NIM" autocomplete="off">
   <input type="password" id="userPw" placeholder="Password Portal">
   
-  <button class="submit" onclick="handleLogin()">Masuk</button>
+  <!-- LINK LUPA PASSWORD (KHUSUS PELANGGAN) -->
+  <div style="text-align: right; margin-top: -5px; margin-bottom: 20px;">
+    <a id="forgotPasswordLink" onclick="openForgotPasswordModal()" style="font-size: 13px; color: #E63946; font-weight: 600; text-decoration: none; cursor: pointer; display: none;">Lupa Password?</a>
+  </div>
+
+  <button class="submit" id="btnSubmit" onclick="handleLogin()">Masuk</button>
+  
+  <div class="register-link">
+    Belum punya akun? 
+    <a onclick="openRegisterModal()">Daftar di sini</a> untuk mendapatkan voucher diskon asrieats yang melimpah!
+  </div>
+
+  <div class="divider">ATAU</div>
+  
+  <div class="quick-guest-box">
+    <p><i class="fas fa-bolt"></i> Pesan Cepat (Tanpa Daftar)</p>
+    <input type="text" id="quickGuestName" placeholder="Masukkan Nama Anda">
+    <button class="submit" id="btnQuickGuest" onclick="quickGuestLogin()">Masuk Sebagai Guest</button>
+  </div>
+</div>
+
+<!-- MODAL PENDAFTARAN (STEP 1: ISI DATA) -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeRegisterModal()">✕</button>
+    <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 20px; color: #7C9062;">Daftar Akun Pelanggan</h2>
+    
+    <div id="regError" class="error"></div>
+
+    <label style="font-size: 12px; font-weight: 600; color: #8E8E8E; display: block; margin-bottom: 5px;">Nama Lengkap</label>
+    <input type="text" id="regName" placeholder="Contoh: Budi Santoso">
+    
+    <label style="font-size: 12px; font-weight: 600; color: #8E8E8E; display: block; margin-bottom: 5px;">Email (Untuk Login)</label>
+    <input type="email" id="regEmail" placeholder="Contoh: budi@email.com">
+    
+    <label style="font-size: 12px; font-weight: 600; color: #8E8E8E; display: block; margin-bottom: 5px;">Password</label>
+    <input type="password" id="regPassword" placeholder="Minimal 6 karakter">
+    
+    <label style="font-size: 12px; font-weight: 600; color: #8E8E8E; display: block; margin-bottom: 5px;">Konfirmasi Password</label>
+    <input type="password" id="regConfirmPassword" placeholder="Ketik ulang password">
+    
+    <button class="submit" id="btnRegister" onclick="handleRegister()" style="margin-top: 10px;">Daftar Sekarang</button>
+  </div>
+</div>
+
+<!-- MODAL OTP PENDAFTARAN (STEP 2: MASUKKIN KODE) -->
+<div class="modal-overlay" id="otpRegisterModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeOtpRegisterModal()">✕</button>
+    <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 10px; color: #7C9062;">Verifikasi Email</h2>
+    <p style="text-align: center; font-size: 13px; color: #8E8E8E; margin-bottom: 20px;">Kode 8
+       digit telah dikirim ke email Anda. Masukkan kode tersebut di bawah ini.</p>
+    
+    <div id="otpRegError" class="error"></div>
+
+    <input type="text" id="regOtpInput" placeholder="Masukkan Kode OTP" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+    
+    <button class="submit" id="btnVerifyOtp" onclick="handleVerifyRegisterOtp()" style="margin-top: 10px;">Verifikasi & Buat Akun</button>
+  </div>
+</div>
+
+<!-- MODAL LUPA PASSWORD (STEP 1: MASUKKIN EMAIL) -->
+<div class="modal-overlay" id="forgotPasswordModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeForgotPasswordModal()">✕</button>
+    <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 20px; color: #7C9062;">Lupa Password</h2>
+    
+    <div id="forgotError" class="error"></div>
+
+    <label style="font-size: 12px; font-weight: 600; color: #8E8E8E; display: block; margin-bottom: 5px;">Email Terdaftar</label>
+    <input type="email" id="forgotEmail" placeholder="Masukkan email Anda">
+    
+    <button class="submit" id="btnSendOtp" onclick="handleForgotPasswordRequest()" style="margin-top: 10px;">Kirim Kode Reset</button>
+  </div>
+</div>
+
+<!-- MODAL LUPA PASSWORD (STEP 2: MASUKKIN OTP & PASSWORD BARU) -->
+<div class="modal-overlay" id="resetPasswordModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeResetPasswordModal()">✕</button>
+    <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 10px; color: #7C9062;">Reset Password</h2>
+    <p style="text-align: center; font-size: 13px; color: #8E8E8E; margin-bottom: 20px;">Kode reset telah dikirim ke email Anda.</p>
+    
+    <div id="resetError" class="error"></div>
+
+    <input type="text" id="resetOtpInput" placeholder="Kode OTP" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+    <input type="password" id="resetNewPassword" placeholder="Password Baru (Min. 6 Karakter)">
+    
+    <button class="submit" id="btnResetPass" onclick="handleVerifyResetOtp()" style="margin-top: 10px;">Simpan Password Baru</button>
+  </div>
+</div>
+
+<!-- MODAL CUSTOM ALERT (PENGGANTI ALERT JELEK) -->
+<div class="modal-overlay" id="customAlertModal" style="z-index: 3000;">
+  <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px 20px;">
+    <div style="font-size: 50px; color: #F4A261; margin-bottom: 15px;">
+      <i class="fas fa-info-circle"></i>
+    </div>
+    <h3 style="font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 10px; color: #2B2B2B;">Informasi</h3>
+    <p id="customAlertMessage" style="color: #8E8E8E; font-size: 14px; margin-bottom: 25px; line-height: 1.5;"></p>
+    <button class="submit" id="btnCustomAlertOk" style="margin-top: 0;">Oke, Mengerti</button>
+  </div>
 </div>
 
 <script>
@@ -45,72 +174,339 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let role = 'mahasiswa';
+let onCustomAlertOk = null; // Callback buat nyimpen aksi selanjutnya
+
+// Fungsi Custom Alert
+function showCustomAlert(message, callback = null) {
+  document.getElementById('customAlertMessage').textContent = message;
+  document.getElementById('customAlertModal').classList.add('active');
+  onCustomAlertOk = callback; // Simpan fungsi yang mau dijalanin pas tombol OK diklik
+}
+
+// Event listener tombol OK di Custom Alert
+document.getElementById('btnCustomAlertOk').addEventListener('click', () => {
+  document.getElementById('customAlertModal').classList.remove('active');
+  if (typeof onCustomAlertOk === 'function') {
+    onCustomAlertOk(); // Jalanin aksi selanjutnya
+    onCustomAlertOk = null; // Reset
+  }
+});
 
 function setRole(r) {
   role = r;
   document.getElementById('tabMhs').classList.toggle('active', r === 'mahasiswa');
-  document.getElementById('tabGuest').classList.toggle('active', r === 'guest');
+  document.getElementById('tabPelanggan').classList.toggle('active', r === 'pelanggan');
+  
   const inputId = document.getElementById('userId');
   const inputPw = document.getElementById('userPw');
+  const forgotLink = document.getElementById('forgotPasswordLink');
   
-  if (r === 'guest') {
-    inputId.placeholder = 'Nama Anda (Guest)';
-    inputPw.style.display = 'none';
+  document.getElementById('error').style.display = 'none'; 
+  
+  if (r === 'pelanggan') {
+    inputId.placeholder = 'Email Anda';
+    inputPw.placeholder = 'Password Akun';
+    forgotLink.style.display = 'block';
   } else {
     inputId.placeholder = 'NIM (Nomor Induk Mahasiswa)';
-    inputPw.style.display = 'block';
+    inputPw.placeholder = 'Password Portal';
+    forgotLink.style.display = 'none';
   }
 }
 
+// --- LOGIKA LOGIN (PISAH MAHASISWA & PELANGGAN) ---
 async function handleLogin() {
   const id = document.getElementById('userId').value.trim();
   const pw = document.getElementById('userPw').value;
   const err = document.getElementById('error');
-  const btn = document.querySelector('button.submit');
+  const btn = document.getElementById('btnSubmit');
 
-  if (!id) { err.textContent = "Nama/NIM tidak boleh kosong!"; err.style.display = 'block'; return; }
-
-  // TAMBAHAN: Validasi Minimal 3 Karakter (Khusus Guest)
-  if (role === 'guest' && id.length < 3) {
-    err.textContent = "Nama Guest minimal 3 karakter ya!"; 
-    err.style.display = 'block'; 
-    return;
-  }
+  if (!id || !pw) { err.textContent = "ID/Email dan Password wajib diisi!"; err.style.display = 'block'; return; }
 
   btn.disabled = true; btn.textContent = "Memeriksa...";
   err.style.display = 'none';
 
-  if (role === 'mahasiswa') {
-    if (!pw) { err.textContent = "Password wajib diisi!"; err.style.display = 'block'; btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return; }
+  try {
+    if (role === 'mahasiswa') {
+      const { data: user, error: dbErr } = await sb.from('users').select('*').eq('id', id).single();
 
-    const { data: user, error: dbErr } = await sb.from('users').select('*').eq('id', id).single();
+      if (dbErr || !user) {
+        err.textContent = "Akun tidak terdaftar!"; err.style.display = 'block'; 
+        btn.disabled=false; btn.textContent="Masuk"; return;
+      }
 
-    if (dbErr || !user) {
-      err.textContent = "NIM tidak terdaftar di sistem!"; err.style.display = 'block'; 
-      btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return;
+      if (user.role !== 'mahasiswa') {
+        err.textContent = `Akun ini terdaftar sebagai ${user.role}, silakan pindah tab.`; 
+        err.style.display = 'block'; 
+        btn.disabled=false; btn.textContent="Masuk"; return;
+      }
+
+      if (user.password !== pw) {
+        err.textContent = "Password salah!"; err.style.display = 'block'; 
+        btn.disabled=false; btn.textContent="Masuk"; return;
+      }
+
+      sessionStorage.setItem('user_id', user.id);
+      sessionStorage.setItem('user_name', user.nama); 
+      sessionStorage.setItem('user_role', user.role); 
+
+      window.location.href = 'tes.html';
+
+    } else {
+      const { data: authData, error: authErr } = await sb.auth.signInWithPassword({
+        email: id,
+        password: pw
+      });
+
+      if (authErr) {
+        err.textContent = "Email atau Password salah!"; err.style.display = 'block'; 
+        btn.disabled=false; btn.textContent="Masuk"; return;
+      }
+
+      const { data: profile, error: profileErr } = await sb.from('users').select('nama').eq('id', id).single();
+
+      if (profileErr || !profile) {
+        err.textContent = "Profil tidak ditemukan, hubungi admin."; err.style.display = 'block'; 
+        btn.disabled=false; btn.textContent="Masuk"; return;
+      }
+
+      sessionStorage.setItem('user_id', id);
+      sessionStorage.setItem('user_name', profile.nama); 
+      sessionStorage.setItem('user_role', 'pelanggan'); 
+
+      window.location.href = 'tes.html';
     }
 
-    if (user.password !== pw) {
-      err.textContent = "Password salah!"; err.style.display = 'block'; 
-      btn.disabled=false; btn.textContent="Masuk ke Aplikasi"; return;
-    }
+  } catch (error) {
+    err.textContent = "Terjadi kesalahan sistem."; err.style.display = 'block'; 
+    btn.disabled=false; btn.textContent="Masuk";
+  }
+}
 
-    sessionStorage.setItem('user_id', user.id);
-    sessionStorage.setItem('user_name', user.nama); 
-    sessionStorage.setItem('user_role', 'mahasiswa');
+// --- LOGIKA PENDAFTARAN PELANGGAN (STEP 1) ---
+function openRegisterModal() {
+  document.getElementById('registerModal').classList.add('active');
+}
+function closeRegisterModal() {
+  document.getElementById('registerModal').classList.remove('active');
+  document.getElementById('regError').style.display = 'none';
+}
 
-  } else {
-    // --- LOGIKA GUEST (Bikin ID unik tiap login biar gak nyangkut) ---
-    const uniqueGuestId = 'guest_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    
-    await sb.from('users').insert([{ id: uniqueGuestId, nama: id, role: 'guest', points: 0 }]);
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  const confirmPass = document.getElementById('regConfirmPassword').value;
+  const err = document.getElementById('regError');
+  const btn = document.getElementById('btnRegister');
 
-    sessionStorage.setItem('user_id', uniqueGuestId); 
-    sessionStorage.setItem('user_name', id); 
-    sessionStorage.setItem('user_role', 'guest');
+  if (!name || !email || !pass || !confirmPass) {
+    err.textContent = "Semua kolom wajib diisi!"; err.style.display = 'block'; return;
+  }
+  if (pass.length < 6) {
+    err.textContent = "Password minimal 6 karakter!"; err.style.display = 'block'; return;
+  }
+  if (pass !== confirmPass) {
+    err.textContent = "Konfirmasi password tidak cocok!"; err.style.display = 'block'; return;
   }
 
-  window.location.href = 'tes.html';
+  btn.disabled = true; btn.textContent = "Memproses...";
+  err.style.display = 'none';
+
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: email,
+      password: pass
+    });
+
+    if (error) throw error;
+
+    sessionStorage.setItem('pending_reg_email', email);
+    sessionStorage.setItem('pending_reg_name', name);
+
+    // Ganti alert jadi Custom Alert dengan Callback
+    showCustomAlert('Kode 8 digit telah dikirim ke email Anda. Silakan cek kotak masuk/spam.', () => {
+      closeRegisterModal();
+      document.getElementById('otpRegisterModal').classList.add('active');
+    });
+
+  } catch (error) {
+    err.textContent = "Gagal daftar: " + error.message; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = "Daftar Sekarang";
+  }
+}
+
+// --- LOGIKA VERIFIKASI OTP PENDAFTARAN (STEP 2) ---
+function closeOtpRegisterModal() {
+  document.getElementById('otpRegisterModal').classList.remove('active');
+  document.getElementById('otpRegError').style.display = 'none';
+}
+
+async function handleVerifyRegisterOtp() {
+  const email = sessionStorage.getItem('pending_reg_email');
+  const name = sessionStorage.getItem('pending_reg_name');
+  const token = document.getElementById('regOtpInput').value.trim();
+  const err = document.getElementById('otpRegError');
+  const btn = document.getElementById('btnVerifyOtp');
+
+  if (!token) { err.textContent = "Masukkan kode OTP!"; err.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = "Memverifikasi...";
+  err.style.display = 'none';
+
+  try {
+    const { error: verifyError } = await sb.auth.verifyOtp({
+      email: email,
+      token: token,
+      type: 'signup'
+    });
+
+    if (verifyError) throw verifyError;
+
+    const { error: insertError } = await sb.from('users').insert([{
+      id: email,
+      nama: name,
+      role: 'pelanggan'
+    }]);
+
+    if (insertError) throw insertError;
+
+    // Ganti alert jadi Custom Alert dengan Callback
+    showCustomAlert('Pendaftaran Berhasil! Silakan masuk menggunakan Email dan Password Anda.', () => {
+      closeOtpRegisterModal();
+      setRole('pelanggan');
+      document.getElementById('userId').value = email;
+      document.getElementById('userPw').value = '';
+      document.getElementById('userPw').focus();
+      
+      sessionStorage.removeItem('pending_reg_email');
+      sessionStorage.removeItem('pending_reg_name');
+    });
+
+  } catch (error) {
+    err.textContent = "Kode OTP salah atau sudah kedaluwarsa."; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = "Verifikasi & Buat Akun";
+  }
+}
+
+// --- LOGIKA LUPA PASSWORD (STEP 1) ---
+function openForgotPasswordModal() {
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotPasswordModal').classList.add('active');
+  
+  const typedEmail = document.getElementById('userId').value.trim();
+  if(typedEmail && typedEmail.includes('@')) {
+    document.getElementById('forgotEmail').value = typedEmail;
+  }
+}
+
+function closeForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').classList.remove('active');
+}
+
+async function handleForgotPasswordRequest() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const err = document.getElementById('forgotError');
+  const btn = document.getElementById('btnSendOtp');
+
+  if (!email) { err.textContent = "Masukkan email Anda!"; err.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = "Mengirim...";
+  err.style.display = 'none';
+
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+
+    // Ganti alert jadi Custom Alert dengan Callback
+    showCustomAlert('Kode reset password telah dikirim ke email Anda.', () => {
+      closeForgotPasswordModal();
+      document.getElementById('resetPasswordModal').classList.add('active');
+      document.getElementById('forgotEmail').value = email;
+    });
+
+  } catch (error) {
+    err.textContent = "Gagal mengirim kode. Pastikan email terdaftar."; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = "Kirim Kode Reset";
+  }
+}
+
+// --- LOGIKA RESET PASSWORD (STEP 2) ---
+function closeResetPasswordModal() {
+  document.getElementById('resetPasswordModal').classList.remove('active');
+  document.getElementById('resetError').style.display = 'none';
+}
+
+async function handleVerifyResetOtp() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const token = document.getElementById('resetOtpInput').value.trim();
+  const newPass = document.getElementById('resetNewPassword').value;
+  const err = document.getElementById('resetError');
+  const btn = document.getElementById('btnResetPass');
+
+  if (!token || !newPass) { err.textContent = "Isi kode OTP dan password baru!"; err.style.display = 'block'; return; }
+  if (newPass.length < 6) { err.textContent = "Password minimal 6 karakter!"; err.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = "Memverifikasi...";
+  err.style.display = 'none';
+
+  try {
+    const { error: verifyError } = await sb.auth.verifyOtp({
+      email: email,
+      token: token,
+      type: 'recovery'
+    });
+
+    if (verifyError) throw verifyError;
+
+    const { error: updateError } = await sb.auth.updateUser({
+      password: newPass
+    });
+
+    if (updateError) throw updateError;
+
+    // Ganti alert jadi Custom Alert dengan Callback
+    showCustomAlert('Password berhasil direset! Silakan login dengan password baru.', async () => {
+      await sb.auth.signOut();
+      closeResetPasswordModal();
+      document.getElementById('userPw').value = '';
+    });
+
+  } catch (error) {
+    err.textContent = "Kode OTP salah atau kedaluwarsa."; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = "Simpan Password Baru";
+  }
+}
+
+// --- LOGIKA QUICK GUEST ---
+async function quickGuestLogin() {
+  const name = document.getElementById('quickGuestName').value.trim();
+  const btn = document.getElementById('btnQuickGuest');
+  
+  if (!name || name.length < 3) { 
+    showCustomAlert('Nama minimal 3 karakter ya!'); 
+    return; 
+  }
+  
+  btn.disabled = true; btn.textContent = "Memproses...";
+  
+  try {
+    const uniqueGuestId = 'guest_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    await sb.from('users').insert([{ id: uniqueGuestId, nama: name, role: 'guest', points: 0 }]);
+
+    sessionStorage.setItem('user_id', uniqueGuestId); 
+    sessionStorage.setItem('user_name', name); 
+    sessionStorage.setItem('user_role', 'guest');
+    
+    window.location.href = 'tes.html';
+  } catch (error) {
+    showCustomAlert('Gagal masuk, silakan coba lagi.');
+    btn.disabled = false; btn.textContent = "Masuk Sebagai Guest";
+  }
 }
 
 if (sessionStorage.getItem('user_id')) {
@@ -118,4 +514,4 @@ if (sessionStorage.getItem('user_id')) {
 }
 </script>
 </body>
-</html> 
+</html>
