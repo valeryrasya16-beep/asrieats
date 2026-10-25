@@ -3,18 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login Kasir - ASRIEATS</title>
+<title>Index - ASRIEATS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   body { font-family: 'Inter', sans-serif; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
   .card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
   h1 { color: #1a6b4a; font-size: 24px; margin-bottom: 5px; }
   p { color: #64748b; font-size: 13px; margin-bottom: 20px; }
-  input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; outline: none; font-family: inherit; }
-  button { width: 100%; padding: 14px; background: #1a6b4a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-  button:hover { background: #145238; }
+  input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; outline: none; font-family: inherit; }
+  
+  /* STYLE BUAT TOMBOL CUSTOM PILIH WARUNG */
+  .custom-select-btn { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; background: white; font-family: inherit; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #1e293b; font-size: 14px;}
+  .custom-select-btn span { color: #64748b; }
+  
+  button.btn-login { width: 100%; padding: 14px; background: #1a6b4a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit; }
+  button.btn-login:hover { background: #145238; }
   .error { color: red; font-size: 13px; margin-bottom: 10px; display: none; background: #fee; padding: 10px; border-radius: 6px; }
+
+  /* MODAL STYLES */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: white; padding: 20px; width: 90%; max-width: 350px; position: relative; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+  .voucher-opt { padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; margin-bottom: 10px; }
+  .voucher-opt:hover { border-color: #1a6b4a; background: #f8fafc; }
+  .voucher-opt.active { border-color: #1a6b4a; background: #e8f5ee; }
+  .voucher-opt-title { font-weight: 600; color: #1e293b; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -24,18 +40,28 @@
   <div id="error" class="error"></div>
   
   <input type="text" id="kasirName" placeholder="Nama Kasir">
-  <select id="kantinSelect">
-    <option value="">-- Pilih Warung --</option>
-    <option value="warung_nusantara">Warung Nusantara</option>
-    <option value="warung_sederhana">Warung Sederhana</option>
-    <option value="warung_modern">Warung Modern</option>
-    <option value="warung_bakso_joss">Warung Bakso Joss</option>
-    <option value="warung_mie_ayam">Warung Mie Ayam</option>
-    <option value="warung_wareg">Warung Wareg</option>
-  </select>
+  
+  <!-- TOMBOL CUSTOM MODAL UNTUK PILIH WARUNG -->
+  <input type="hidden" id="kantinSelect" value="">
+  <button type="button" class="custom-select-btn" onclick="openKantinModal()">
+    <span id="kantinSelectText">Pilih Warung</span>
+    <i class="fas fa-chevron-down" style="font-size:12px; color:#64748b;"></i>
+  </button>
+
   <input type="password" id="kasirPw" placeholder="Password Warung">
   
-  <button onclick="loginKasir()">Masuk Dashboard</button>
+  <button class="btn-login" onclick="loginKasir()">Masuk Dashboard</button>
+</div>
+
+<!-- MODAL PILIH WARUNG -->
+<div class="modal-overlay" id="kantinModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeKantinModal()">✕</button>
+    <h3 style="font-family:'Playfair Display',serif; text-align:center; margin-bottom:15px; color:#1e293b;">Pilih Warung</h3>
+    <div id="kantinOptionsList" style="max-height: 300px; overflow-y: auto;">
+      <!-- Diisi via JS -->
+    </div>
+  </div>
 </div>
 
 <script>
@@ -43,13 +69,59 @@ const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const KANTIN_NAMES = { 
+  'warung_nusantara': 'Warung Nusantara', 
+  'warung_sederhana': 'Warung Sederhana', 
+  'warung_modern': 'Warung Modern',
+  'warung_bakso_joss': 'Warung Bakso Joss',
+  'warung_mie_ayam': 'Warung Mie Ayam',
+  'warung_wareg': 'Warung Wareg'
+};
+
+let selectedKantinId = "";
+
+// --- LOGIKA MODAL KANTIN ---
+function openKantinModal() {
+  const list = document.getElementById('kantinOptionsList');
+  let html = '';
+  
+  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    let isActive = (selectedKantinId === id);
+    html += `
+      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantin('${id}', '${name}')">
+        <div class="voucher-opt-title">${name}</div>
+        ${isActive ? '<i class="fas fa-check-circle" style="color:#1a6b4a;"></i>' : ''}
+      </div>
+    `;
+  }
+  list.innerHTML = html;
+  document.getElementById('kantinModal').classList.add('active');
+}
+
+function closeKantinModal() {
+  document.getElementById('kantinModal').classList.remove('active');
+}
+
+function selectKantin(id, name) {
+  selectedKantinId = id;
+  document.getElementById('kantinSelect').value = id;
+  document.getElementById('kantinSelectText').textContent = name;
+  document.getElementById('kantinSelectText').style.color = '#1e293b';
+  closeKantinModal();
+}
+// ----------------------------
+
 async function loginKasir() {
   const name = document.getElementById('kasirName').value.trim();
   const kantin = document.getElementById('kantinSelect').value;
   const pw = document.getElementById('kasirPw').value;
   const err = document.getElementById('error');
 
-  if(!name || !kantin || !pw) { err.textContent="Isi semua data!"; err.style.display='block'; return; }
+  if(!name || !kantin || !pw) { 
+    err.textContent="Isi Nama, Pilih Warung, dan Password!"; 
+    err.style.display='block'; 
+    return; 
+  }
 
   const { data, error } = await sb.from('kantins').select('password').eq('id', kantin).single();
   
