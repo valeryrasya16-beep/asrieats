@@ -21,7 +21,7 @@
   .stat-val { font-size: 24px; font-weight: 700; margin-top: 5px; }
   .stat-icon { font-size: 24px; color: #1a6b4a; background: #e8f5ee; padding: 12px; border-radius: 50%; }
 
-  .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .tab-btn { padding: 10px 20px; background: transparent; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; transition: 0.2s; }
   .tab-btn.active { background: #1a6b4a; color: white; border-color: #1a6b4a; }
 
@@ -31,16 +31,27 @@
   .btn-reset:hover { background: #cbd5e1; }
 
   .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 800px; }
+  table { width: 100%; border-collapse: collapse; min-width: 850px; }
   th { text-align: left; padding: 15px 20px; background: #f1f5f9; font-size: 13px; color: #64748b; font-weight: 600; }
   td { padding: 15px 20px; font-size: 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
-  .badge-tipe { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; margin-left: 5px; }
-  .badge-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534; font-weight: 600; }
-  .btn-action { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px; transition: 0.2s; }
+  
+  .btn-action { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; white-space: nowrap; }
   .btn-action:hover { opacity: 0.8; }
   .btn-print { background: #64748b; color: white; }
   .btn-done { background: #1a6b4a; color: white; }
   .btn-del { background: #fee2e2; color: #dc4a3d; }
+
+  .badge-tipe { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; white-space: nowrap; }
+  .badge-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534; font-weight: 600; white-space: nowrap; }
+
+  /* CSS UNTUK TOGGLE SWITCH (SAKLAR) */
+  .switch { position: relative; display: inline-block; width: 46px; height: 24px; vertical-align: middle; margin-right: 8px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: #1a6b4a; }
+  input:checked + .slider:before { transform: translateX(22px); }
+  .status-label { font-weight: 600; font-size: 13px; vertical-align: middle; }
 
   .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
   .modal-overlay.active { display: flex; }
@@ -53,7 +64,7 @@
 
 <div class="header">
   <div class="brand"><h1 id="headerTitle">ASRIEATS Kasir</h1></div>
-  <button class="btn-logout" onclick="logout()">Logout</button>
+  <button class="btn-logout" onclick="openLogoutModal()">Logout</button>
 </div>
 
 <div class="stats-grid">
@@ -76,9 +87,10 @@
 <div class="tabs">
   <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Pesanan Aktif</button>
   <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">Riwayat Selesai</button>
+  <button class="tab-btn" id="tabMenu" onclick="switchTab('menu')">Kelola Menu</button>
 </div>
 
-<div class="filter-box">
+<div class="filter-box" id="filterBox">
   <label><i class="fas fa-filter"></i> Tipe Laporan:</label>
   <select id="filterType" onchange="changeFilterType()">
     <option value="daily">Harian</option>
@@ -92,19 +104,42 @@
   <button class="btn-reset" onclick="resetFilter()">Reset</button>
 </div>
 
-<div class="table-container">
+<!-- TABEL PESANAN -->
+<div class="table-container" id="tableOrders">
   <table>
     <thead>
-      <tr><th>Antrean</th><th>Waktu</th><th>Meja / Nama</th><th>Pesanan</th><th>Total</th><th>Aksi</th></tr>
+      <tr>
+        <th>Waktu</th>
+        <th>Meja / Nama</th>
+        <th>Pesanan</th>
+        <th>Total</th>
+        <th>Aksi</th>
+      </tr>
     </thead>
     <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<!-- TABEL KELOLA MENU -->
+<div class="table-container" id="tableMenu" style="display: none;">
+  <table>
+    <thead>
+      <tr>
+        <th>Gambar</th>
+        <th>Nama Menu</th>
+        <th>Harga</th>
+        <th>Kategori</th>
+        <th>Status Ketersediaan</th>
+      </tr>
+    </thead>
+    <tbody id="menuTableBody"></tbody>
   </table>
 </div>
 
 <div id="printArea" style="display:none;"></div>
 <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#1e293b; color:white; padding:10px 20px; border-radius:20px; opacity:0; transition:0.3s; z-index:9999;"></div>
 
-<!-- MODAL KONFIRMASI CUSTOM -->
+<!-- MODAL KONFIRMASI CUSTOM (SELESAI/HAPUS) -->
 <div class="modal-overlay" id="actionModal">
   <div class="modal-content">
     <div id="modalIcon" style="font-size: 40px; margin-bottom: 15px;"></div>
@@ -113,6 +148,21 @@
     <div style="display: flex; gap: 10px;">
       <button class="btn-action" onclick="closeActionModal()" style="flex: 1; background: #e2e8f0; color: #1e293b; padding: 12px; font-size: 14px; margin: 0;">Batal</button>
       <button class="btn-action" id="modalConfirmBtn" onclick="executeAction()" style="flex: 1; color: white; padding: 12px; font-size: 14px; margin: 0;">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KONFIRMASI LOGOUT -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px 20px;">
+    <div style="font-size: 40px; color: #dc4a3d; margin-bottom: 15px;">
+      <i class="fas fa-sign-out-alt"></i>
+    </div>
+    <h3 style="font-size: 20px; margin-bottom: 10px; color: #1e293b;">Yakin Mau Logout?</h3>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">Anda harus masuk kembali untuk bisa mengakses dashboard kasir.</p>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-action" onclick="closeLogoutModal()" style="flex: 1; background: #e2e8f0; color: #1e293b; padding: 12px; font-size: 14px; margin: 0;">Batal</button>
+      <button class="btn-action" onclick="executeLogout()" style="flex: 1; background: #dc4a3d; color: white; padding: 12px; font-size: 14px; margin: 0;">Logout</button>
     </div>
   </div>
 </div>
@@ -133,18 +183,66 @@ const KANTIN_NAMES = {
   'warung_wareg': 'Warung Wareg'
 };
 
+const BUCKET_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/";
+const IMAGE_MAP = {
+  'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg',
+  'Nasi Bakar Ayam S': 'nasi bakar.jpg', 'Nasi Bakar Ayam L': 'nasi bakar.jpg', 'Nasi Bakar Ayam XL': 'nasi bakar.jpg',
+  'Nasi Bakar Usus S': 'nasi bakar usus .jpg', 'Nasi Bakar Usus L': 'nasi bakar usus .jpg', 'Nasi Bakar Usus XL': 'nasi bakar usus .jpg',
+  'Mineral': 'air mineral.jpg', 'Nasi Ayam Bakar': 'nasi ayam bakar.jpg', 'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg',
+  'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg', 'Es Teh': 'Es Teh..jpg', 'Dimsum': 'Dimsum.jpg',
+  'Spaghetti Carbonara': 'Resep-Spaghetti-Carbonara-Gurih-dan-Creamy-Ala-Restoran-Italia-.jpg.webp',       
+  'Spaghetti Aglio e Olio': '28111939213_fc18b29d8f_o.jpg',    
+  'Spaghetti Bolognese': 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Spaghetti.jpg',
+  'Kroket': 'Kroket.jpg', 'Mini Pizza': 'Mini Pizza.jpg', 'Bakso Kecil': 'mie bakso kecil.jpg', 'Bakso Besar': 'Bakso Biasa.jpg',
+  'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg', 'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp',
+  'Mie Ayam': 'Mie Ayam Biasa.jpg', 'Mie Ayam + Bakso': 'mie ayam + bakso.jpg', 'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg',
+  'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg', 'Nasi Goreng': 'Nasi Goreng..jpg', 'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg',
+  'Mie Goreng': 'Mie Goreng..jpg', 'Mie Goreng Seafood': 'mie goreng seafood.jpg', 'Mie Rebus': 'mie rebus.jpg', 'Kwetiau': 'Kwetiau Goreng.jpg'
+};
+
+function getImageUrl(menuName) {
+  const fileName = IMAGE_MAP[menuName];
+  if (fileName) { 
+    if (fileName.startsWith('http')) { return fileName; }
+    return `${BUCKET_URL}${encodeURIComponent(fileName)}`; 
+  }
+  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop';
+}
+
+// ==========================================
+// AUDIO NOTIFIKASI KASIR
+// ==========================================
+const notifAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+notifAudio.volume = 1.0;
+
+function playNotif() {
+  notifAudio.currentTime = 0;
+  notifAudio.play().catch(e => console.log('Audio autoplay diblokir browser'));
+}
+// ==========================================
+
 let allOrders = [];
+let allMenus = [];
 let currentTab = 'active'; 
 let pendingActionId = null;
 let currentActionType = null;
 
-// SET DEFAULT KE HARI INI PAS DIBUKA
 document.addEventListener('DOMContentLoaded', () => {
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   document.getElementById('filterTanggal').value = `${year}-${month}-${day}`;
+
+  // Unlock audio on first click (browser policy)
+  document.body.addEventListener('click', () => {
+    if (notifAudio.paused) {
+      notifAudio.play().then(() => {
+        notifAudio.pause(); 
+        notifAudio.currentTime = 0;
+      }).catch(e => {});
+    }
+  }, { once: true });
 });
 
 function checkAuth() {
@@ -162,10 +260,75 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabActive').classList.toggle('active', tab === 'active');
   document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
-  renderTable();
+  document.getElementById('tabMenu').classList.toggle('active', tab === 'menu');
+  
+  if (tab === 'menu') {
+    document.getElementById('filterBox').style.display = 'none';
+    document.getElementById('tableOrders').style.display = 'none';
+    document.getElementById('tableMenu').style.display = 'block';
+    fetchMenuData();
+  } else {
+    document.getElementById('filterBox').style.display = 'flex';
+    document.getElementById('tableOrders').style.display = 'block';
+    document.getElementById('tableMenu').style.display = 'none';
+    fetchData();
+  }
 }
 
-// NAMPILIN INPUT SESUAI TIPE FILTER
+// ==========================================
+// LOGIKA KELOLA MENU
+// ==========================================
+async function fetchMenuData() {
+  const tbody = document.getElementById('menuTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">Memuat menu...</td></tr>';
+
+  const { data, error } = await sb.from('menu').select('*').eq('kantin_id', KANTIN_ID).order('name', { ascending: true });
+  
+  if (error) { showToast('Gagal memuat menu'); return; }
+  allMenus = data || [];
+
+  if (allMenus.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">Belum ada menu di warung ini.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allMenus.map(m => {
+    const imgUrl = getImageUrl(m.name);
+    const isAvailable = m.is_available !== false; 
+    
+    return `
+      <tr>
+        <td><img src="${imgUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop'"></td>
+        <td><b>${m.name}</b></td>
+        <td>Rp ${m.price.toLocaleString('id-ID')}</td>
+        <td style="text-transform: capitalize;">${m.category}</td>
+        <td>
+          <label class="switch">
+            <input type="checkbox" ${isAvailable ? 'checked' : ''} onchange="toggleMenuStatus(${m.id}, ${isAvailable})">
+            <span class="slider"></span>
+          </label>
+          <span class="status-label" style="color: ${isAvailable ? '#1a6b4a' : '#dc4a3d'};">
+            ${isAvailable ? 'Tersedia' : 'Habis'}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function toggleMenuStatus(id, currentStatus) {
+  const newStatus = !currentStatus;
+  const { error } = await sb.from('menu').update({ is_available: newStatus }).eq('id', id);
+  
+  if (error) {
+    showToast('Gagal mengubah status menu');
+  } else {
+    showToast(newStatus ? 'Menu Tersedia' : 'Menu ditandai Habis');
+    fetchMenuData(); 
+  }
+}
+// ==========================================
+
 function changeFilterType() {
   const type = document.getElementById('filterType').value;
   const inputTanggal = document.getElementById('filterTanggal');
@@ -213,7 +376,6 @@ async function fetchData() {
   let rev = 0;
   let activeCount = 0;
 
-  // UPDATE JUDUL DINAMIS
   if (type === 'daily' && dateVal) {
     const dateObj = new Date(dateVal);
     revenueTitle.textContent = `Pendapatan (${dateObj.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })})`;
@@ -224,7 +386,6 @@ async function fetchData() {
     revenueTitle.textContent = `Pendapatan (Semua Waktu)`;
   }
 
-  // HITUNG PENDAPATAN & PESANAN AKTIF SESUAI FILTER
   allOrders.forEach(o => {
     const orderDate = new Date(o.created_at);
     const oYear = orderDate.getFullYear();
@@ -264,12 +425,10 @@ function renderTable() {
   const dateVal = document.getElementById('filterTanggal').value;
   const monthVal = document.getElementById('filterBulan').value;
   
-  // AMBIL SEMUA DATA DULU
   let filteredOrders = currentTab === 'active' 
     ? allOrders.filter(o => o.status !== 'Selesai') 
     : allOrders.filter(o => o.status === 'Selesai');
 
-  // TERAPKAN FILTER TANGGAL KE SEMUA TAB
   if (type === 'daily' && dateVal) {
     filteredOrders = filteredOrders.filter(o => {
       const d = new Date(o.created_at);
@@ -291,17 +450,40 @@ function renderTable() {
     } else {
       emptyMsg = 'Tidak ada riwayat selesai pada filter ini.';
     }
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px;">${emptyMsg}</td></tr>`; 
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px;">${emptyMsg}</td></tr>`; 
     return; 
   }
 
   tbody.innerHTML = filteredOrders.map(o => {
     const d = new Date(o.created_at);
-    const waktu = d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    const waktu = d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     
-    let txt = o.items ? o.items.split(';').map(x => x.split('|')[0] + ' (x' + x.split('|')[2] + ')').join(', ') : '-';
-    const tipeBadge = o.tipe_user === 'mahasiswa' ? '<span class="badge-tipe" style="background:#dbeafe;color:#1e40af">Mhs</span>' : '<span class="badge-tipe" style="background:#fef3c7;color:#92400e">Guest</span>';
+    let txt = '-';
+    if (o.items) {
+      txt = o.items.split(';').map(x => {
+        const p = x.split('|');
+        const spicyText = p[4] ? ` <span style="color:#dc4a3d; font-size:11px; font-weight:bold;">(${p[4]})</span>` : '';
+        const noteText = p[5] ? `<br><span style="color:#64748b; font-size:11px; font-style:italic;">📝 ${p[5]}</span>` : '';
+        return `<div style="margin-bottom: 8px;">${p[0]}${spicyText} <span style="color:#64748b; font-size:12px;">(x${p[2]})</span>${noteText}</div>`;
+      }).join('');
+    }
+
+    let tipeBadge = '';
+    if (o.tipe_user === 'mahasiswa') {
+      tipeBadge = '<span class="badge-tipe" style="background:#dbeafe;color:#1e40af">Mahasiswa/i</span>';
+    } else if (o.tipe_user === 'pelanggan') {
+      tipeBadge = '<span class="badge-tipe" style="background:#e0e7ff;color:#4338ca">Pelanggan</span>';
+    } else {
+      tipeBadge = '<span class="badge-tipe" style="background:#fef3c7;color:#92400e">Guest</span>';
+    }
+
     const statusBadge = o.status === 'Selesai' ? '<span class="badge-status">Selesai</span>' : '';
+    let orderTypeBadge = '';
+    if (o.catatan && o.catatan.includes('Take Away')) {
+      orderTypeBadge = '<span class="badge-tipe" style="background:#fee2e2; color:#dc4a3d;"><i class="fas fa-shopping-bag"></i> Take Away</span>';
+    } else {
+      orderTypeBadge = '<span class="badge-tipe" style="background:#e8f5ee; color:#1a6b4a;"><i class="fas fa-utensils"></i> Dine In</span>';
+    }
 
     let actionButtons = `<button class="btn-action btn-print" onclick="printStruk(${o.id})">Print</button>`;
     if (currentTab === 'active') {
@@ -313,13 +495,26 @@ function renderTable() {
       actionButtons += `<button class="btn-action btn-del" onclick="askDelete(${o.id})">Hapus</button>`;
     }
 
+    let mejaNamaHtml = `
+      <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 2px; white-space: nowrap;">Meja ${o.no_meja}</div>
+      <div style="font-size: 13px; color: #475569; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="${o.nama_pemesan}">${o.nama_pemesan}</div>
+      <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+        ${tipeBadge}
+        ${statusBadge}
+        ${orderTypeBadge}
+      </div>
+    `;
+
     return `<tr>
-      <td><b>#${o.no_antrean}</b></td>
       <td style="color:#64748b; font-size:12px;">${waktu}</td>
-      <td>Meja ${o.no_meja} <br><span style="font-size:12px; color:#64748b">${o.nama_pemesan} ${tipeBadge} ${statusBadge}</span></td>
-      <td style="font-size:12px;">${txt}</td>
-      <td><b>Rp ${o.total_amount.toLocaleString()}</b></td>
-      <td>${actionButtons}</td>
+      <td>${mejaNamaHtml}</td>
+      <td style="font-size:13px;">${txt}</td>
+      <td style="white-space: nowrap;"><b>Rp ${o.total_amount.toLocaleString()}</b></td>
+      <td style="white-space: nowrap;">
+        <div style="display: flex; gap: 5px; flex-wrap: nowrap;">
+          ${actionButtons}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -332,7 +527,9 @@ function printStruk(id) {
   
   const items = o.items.split(';').map(row => {
     const p = row.split('|');
-    return `<tr><td>${p[0]}</td><td align="center">${p[2]}</td><td align="right">Rp ${parseInt(p[3]).toLocaleString()}</td></tr>`;
+    const spicyText = p[4] ? `<br><small style="color:#000; font-weight:bold;">(${p[4]})</small>` : '';
+    const noteText = p[5] ? `<br><small style="color:#000;">*${p[5]}</small>` : '';
+    return `<tr><td>${p[0]}${spicyText}${noteText}</td><td align="center">${p[2]}</td><td align="right">Rp ${parseInt(p[3]).toLocaleString()}</td></tr>`;
   }).join('');
 
   const printArea = document.getElementById('printArea');
@@ -342,7 +539,7 @@ function printStruk(id) {
       <hr style="border-top:1px dashed #000;">
       <p>Waktu: ${waktu}</p>
       <p>Nama: ${o.nama_pemesan} (${o.tipe_user})</p>
-      <p>Meja: ${o.no_meja} | Antrean: ${o.no_antrean}</p>
+      <p>Meja: ${o.no_meja} | Tipe: ${o.catatan}</p>
       <hr style="border-top:1px dashed #000;">
       <table width="100%"><tr><th align="left">Item</th><th>Qty</th><th align="right">Total</th></tr>${items}</table>
       <hr style="border-top:1px dashed #000;">
@@ -355,9 +552,6 @@ function printStruk(id) {
   printArea.style.display = 'none';
 }
 
-// ==========================================
-// LOGIKA CUSTOM MODAL
-// ==========================================
 function askMarkDone(id) {
   pendingActionId = id;
   currentActionType = 'selesai';
@@ -414,12 +608,30 @@ async function executeAction() {
   fetchData();
 }
 
-function logout() { sessionStorage.clear(); window.location.href = '/'; }
+function openLogoutModal() {
+  document.getElementById('logoutModal').classList.add('active');
+}
+
+function closeLogoutModal() {
+  document.getElementById('logoutModal').classList.remove('active');
+}
+
+function executeLogout() {
+  sessionStorage.clear(); 
+  window.location.href = '/'; 
+}
 
 checkAuth();
 if (KANTIN_ID) {
   fetchData();
-  sb.channel('realtime-kasir').on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `kantin_id=eq.${KANTIN_ID}` }, () => fetchData()).subscribe();
+  // LOGIKA NOTIFIKASI SUARA SAAT ADA PESANAN BARU
+  sb.channel('realtime-kasir').on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `kantin_id=eq.${KANTIN_ID}` }, (payload) => {
+    // Jika tipe event-nya adalah INSERT (Pesanan Baru Masuk)
+    if (payload.eventType === 'INSERT') {
+      playNotif();
+    }
+    fetchData(); // Refresh tabel
+  }).subscribe();
 }
 </script>
 </body>
