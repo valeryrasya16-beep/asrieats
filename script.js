@@ -1084,19 +1084,41 @@ async function confirmPayment() {
   };
 
   try {
-    await saveOrder(finalData);
-    
+    // 👇 HITUNG TOTAL PORSI YANG LAGI DIPROSES (SEBELUM INSERT) 👇
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
-    const { count: activeQueueCount } = await sb.from('orders')
-      .select('*', { count: 'exact', head: true })
+    const { data: activeOrders } = await sb.from('orders')
+      .select('items')
       .eq('kantin_id', activeKantin)
       .neq('status', 'Selesai')
       .gte('created_at', today.toISOString()); 
 
+    let activeItemsCount = 0;
+    if (activeOrders && activeOrders.length > 0) {
+      activeOrders.forEach(o => {
+        if (o.items) {
+          o.items.split(';').forEach(itemStr => {
+            const parts = itemStr.split('|');
+            if (parts.length >= 3) {
+              activeItemsCount += parseInt(parts[2]) || 0; // parts[2] adalah Qty
+            }
+          });
+        }
+      });
+    }
+
+    // Insert pesanan baru
+    await saveOrder(finalData);
+
+    // Hitung porsi di keranjang saat ini
+    const totalQtyInCart = cart.reduce((sum, item) => sum + item.qty, 0);
+    const totalBusyItems = activeItemsCount + totalQtyInCart;
+
     let queueWarningHtml = '';
-    if (activeQueueCount && activeQueueCount >= 5) {
+    
+    // 👇 MUNCULIN ALERT KALAU TOTAL PORSI (YANG LAGI ANTRI + BARU DIBELI) >= 5 👇
+    if (totalBusyItems >= 5) {
       queueWarningHtml = `
         <div style="background: #FFF3CD; color: #856404; border: 1px solid #FFEEBA; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 13px; line-height: 1.5;">
           <i class="fas fa-exclamation-triangle" style="color: #F4A261; margin-right: 8px;"></i>
@@ -1121,6 +1143,12 @@ async function confirmPayment() {
       } else {
         await sb.from('user_kantin_points').insert([{ user_id: USER_ID, kantin_id: activeKantin, points: sisaPoin }]);
       }
+
+      // 👇👇 TAMBAHKAN 3 BARIS INI BIAR POIN LANGSUNG UPDATE DI LAYAR 👇👇
+      currentUserPoints = sisaPoin; 
+      document.getElementById('userPointsDisplay').textContent = currentUserPoints; 
+      document.getElementById('modalPoints').textContent = currentUserPoints; 
+      // 👆👆 SAMPAI SINI 👆👆
     }
 
     cart = [];             
