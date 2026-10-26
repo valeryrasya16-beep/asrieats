@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - ASRIEATS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+  h1, h2 { text-align: center; color: #1a6b4a; }
+  input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+  
+  button.btn-primary { width: 100%; padding: 12px; background: #1a6b4a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  button.btn-primary:hover { background: #145238; }
+  
+  button.btn-danger { width: 100%; padding: 12px; background: #dc4a3d; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+  button.btn-danger:hover { background: #b91c1c; }
+
+  .hidden { display: none !important; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+  th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+  th { background: #f8fafc; }
+  .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+  
+  .btn-edit { background: #f59e0b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+  .btn-edit:hover { background: #d97706; }
+  
+  .btn-hapus-tabel { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 5px;}
+  .btn-hapus-tabel:hover { background: #dc2626; }
+
+  /* CSS BUAT PILIHAN WARUNG DI FORM */
+  .kantin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+  .kantin-btn { padding: 12px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; text-align: center; transition: 0.2s; }
+  .kantin-btn:hover { background: #f8fafc; }
+  .kantin-btn.active { background: #1a6b4a; color: white; border-color: #1a6b4a; }
+
+  /* CSS BUAT FILTER TABEL */
+  .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+  .filter-btn { padding: 8px 16px; border: 1px solid #cbd5e1; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+  .filter-btn.active { background: #1a6b4a; color: white; border-color: #1a6b4a; }
+
+  /* ========================================== */
+  /* CSS BUAT CUSTOM MODAL (PENGGANTI ALERT)    */
+  /* ========================================== */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s ease;
+  }
+  .modal-overlay.active { display: flex; opacity: 1; }
+  
+  .modal-box {
+    background: white; padding: 25px; border-radius: 12px;
+    max-width: 350px; width: 90%; text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    transform: translateY(20px); transition: transform 0.2s ease;
+  }
+  .modal-overlay.active .modal-box { transform: translateY(0); }
+
+  .modal-icon { font-size: 45px; margin-bottom: 15px; }
+  .modal-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 10px; color: #1e293b; }
+  .modal-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+  
+  .modal-buttons { display: flex; gap: 10px; }
+  .modal-buttons button { flex: 1; margin-top: 0; padding: 10px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; font-size: 14px; transition: 0.2s; }
+  .btn-modal-batal { background: #e2e8f0; color: #334155; }
+  .btn-modal-batal:hover { background: #cbd5e1; }
+  .btn-modal-oke { background: #1a6b4a; color: white; }
+  .btn-modal-oke:hover { background: #145238; }
+  .btn-modal-danger { background: #dc4a3d; color: white; }
+  .btn-modal-danger:hover { background: #b91c1c; }
+</style>
+</head>
+<body>
+<div class="container">
+  
+  <!-- LOGIN ADMIN -->
+  <div id="loginSection" class="card" style="max-width: 400px; margin: 100px auto;">
+    <h1>Admin Login</h1>
+    <input type="text" id="adminUser" placeholder="Username (admin)">
+    <input type="password" id="adminPass" placeholder="Password (admin123)">
+    <button class="btn-primary" onclick="loginAdmin()">Masuk</button>
+  </div>
+
+  <!-- DASHBOARD ADMIN -->
+  <div id="dashboardSection" class="hidden">
+    <div class="card">
+      <h2 id="formTitle">Tambah Menu Baru</h2>
+      
+      <label style="font-size:12px; font-weight:bold;">Pilih Warung</label>
+      <input type="hidden" id="kantinId" value="warung_nusantara">
+      <div class="kantin-grid" id="adminKantinPicker"></div>
+
+      <label style="font-size:12px; font-weight:bold;">Nama Menu</label>
+      <input type="text" id="menuName" placeholder="Contoh: Nasi Goreng Spesial">
+
+      <label style="font-size:12px; font-weight:bold;">Deskripsi Singkat</label>
+      <textarea id="menuDesc" rows="2" placeholder="Contoh: Nasi goreng dengan telur dan ayam"></textarea>
+
+      <label style="font-size:12px; font-weight:bold;">Harga (Angka saja)</label>
+      <input type="number" id="menuPrice" placeholder="Contoh: 15000">
+
+      <label style="font-size:12px; font-weight:bold;">Kategori</label>
+      <select id="menuCategory" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit;">
+        <option value="makanan">Makanan</option>
+        <option value="minuman">Minuman</option>
+        <option value="snack">Snack</option>
+      </select>
+
+      <label style="font-size:12px; font-weight:bold;" id="labelGambar">Upload Gambar Menu (Wajib jika menu baru)</label>
+      <input type="file" id="menuImage" accept="image/*" style="border: none; padding: 0; margin-bottom: 15px;">
+      <p id="infoGambarLama" class="hidden" style="font-size: 12px; color: #64748b; margin-top: -10px; margin-bottom: 15px;">*Biarkan kosong jika tidak ingin mengubah gambar.</p>
+
+      <button class="btn-primary" onclick="simpanMenu()" id="btnSimpan">Tambah Menu</button>
+      <button class="btn-danger hidden" onclick="batalEdit()" id="btnBatal">Batal Edit</button>
+      
+      <!-- TOMBOL HAPUS DI DALAM FORM EDIT -->
+      <button class="btn-danger hidden" onclick="hapusMenu(editMenuId)" id="btnHapusForm" style="background: #b91c1c;">Hapus Menu Ini</button>
+    </div>
+
+    <div class="card">
+      <h2>Daftar Menu Saat Ini</h2>
+      
+      <div style="position: relative; margin-bottom: 15px;">
+        <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
+        <input type="text" id="searchAdminInput" placeholder="Cari nama menu..." oninput="handleAdminSearch(this.value)" style="padding-left: 40px; margin-bottom: 0;">
+      </div>
+      <div class="filter-tabs" id="adminWarungFilters"></div>
+
+      <div style="max-height: 500px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Gambar</th>
+              <th>Nama Menu</th>
+              <th>Warung</th>
+              <th>Harga</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableMenu">
+            <!-- Diisi JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL CUSTOM ALERT (INFO / SUKSES / ERROR) -->
+<!-- ========================================== -->
+<div class="modal-overlay" id="customAlertModal">
+  <div class="modal-box">
+    <div class="modal-icon" id="alertIcon" style="color: #1a6b4a;"><i class="fas fa-check-circle"></i></div>
+    <h3 class="modal-title" id="alertTitle">Informasi</h3>
+    <p class="modal-desc" id="alertMessage">Pesan</p>
+    <div class="modal-buttons" style="justify-content: center;">
+      <button class="btn-modal-oke" onclick="closeCustomAlert()">Oke, Mengerti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL CUSTOM CONFIRM (KONFIRMASI HAPUS)    -->
+<!-- ========================================== -->
+<div class="modal-overlay" id="customConfirmModal">
+  <div class="modal-box">
+    <div class="modal-icon" style="color: #dc4a3d;"><i class="fas fa-trash-alt"></i></div>
+    <h3 class="modal-title">Konfirmasi Hapus</h3>
+    <p class="modal-desc" id="confirmMessage">Apakah Anda yakin?</p>
+    <div class="modal-buttons">
+      <button class="btn-modal-batal" onclick="closeCustomConfirm(false)">Batal</button>
+      <button class="btn-modal-danger" onclick="closeCustomConfirm(true)">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const KANTIN_NAMES = { 
+  'warung_nusantara': 'Warung Nusantara', 
+  'warung_sederhana': 'Warung Sederhana', 
+  'warung_modern': 'Warung Modern',
+  'warung_bakso_joss': 'Warung Bakso Joss',
+  'warung_mie_ayam': 'Warung Mie Ayam',
+  'warung_wareg': 'Warung Wareg'
+};
+
+const BUCKET_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/";
+const IMAGE_MAP = {
+  'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg',
+  'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg',
+  'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg',
+  'Nasi Bakar Ayam S': 'nasi bakar.jpg',
+  'Nasi Bakar Ayam L': 'nasi bakar.jpg',
+  'Nasi Bakar Ayam XL': 'nasi bakar.jpg',
+  'Nasi Bakar Usus S': 'nasi bakar usus .jpg',
+  'Nasi Bakar Usus L': 'nasi bakar usus .jpg',
+  'Nasi Bakar Usus XL': 'nasi bakar usus .jpg',
+  'Mineral': 'air mineral.jpg',
+  'Nasi Ayam Bakar': 'nasi ayam bakar.jpg',
+  'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg',
+  'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg',
+  'Es Teh': 'Es Teh..jpg',
+  'Dimsum': 'Dimsum.jpg',
+  'Spaghetti Carbonara': 'Resep-Spaghetti-Carbonara-Gurih-dan-Creamy-Ala-Restoran-Italia-.jpg.webp',       
+  'Spaghetti Aglio e Olio': '28111939213_fc18b29d8f_o.jpg',    
+  'Spaghetti Bolognese': 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Spaghetti.jpg',
+  'Kroket': 'Kroket.jpg',
+  'Mini Pizza': 'Mini Pizza.jpg',
+  'Bakso Kecil': 'mie bakso kecil.jpg',
+  'Bakso Besar': 'Bakso Biasa.jpg',
+  'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg',
+  'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp',
+  'Mie Ayam': 'Mie Ayam Biasa.jpg',
+  'Mie Ayam + Bakso': 'mie ayam + bakso.jpg',
+  'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg',
+  'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg',
+  'Nasi Goreng': 'Nasi Goreng..jpg',
+  'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg',
+  'Mie Goreng': 'Mie Goreng..jpg',
+  'Mie Goreng Seafood': 'mie goreng seafood.jpg',
+  'Mie Rebus': 'mie rebus.jpg',
+  'Kwetiau': 'Kwetiau Goreng.jpg'
+};
+
+function getImageUrl(menuName) {
+  const fileName = IMAGE_MAP[menuName];
+  if (fileName) { 
+    if (fileName.startsWith('http')) { return fileName; }
+    return `${BUCKET_URL}${encodeURIComponent(fileName)}`; 
+  }
+  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop';
+}
+
+let allMenuData = []; 
+let editMenuId = null; 
+let currentAdminFilter = 'semua';
+let currentAdminSearch = '';
+let selectedKantinForm = 'warung_nusantara';
+
+// ==========================================
+// FUNGSI CUSTOM MODAL (PENGGANTI ALERT/CONFIRM)
+// ==========================================
+function showCustomAlert(msg, type = 'success') {
+  const icon = document.getElementById('alertIcon');
+  const title = document.getElementById('alertTitle');
+  
+  if (type === 'success') {
+    icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+    icon.style.color = '#1a6b4a';
+    title.textContent = 'Berhasil';
+  } else if (type === 'error') {
+    icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+    icon.style.color = '#dc4a3d';
+    title.textContent = 'Gagal';
+  } else {
+    icon.innerHTML = '<i class="fas fa-info-circle"></i>';
+    icon.style.color = '#f59e0b';
+    title.textContent = 'Informasi';
+  }
+
+  document.getElementById('alertMessage').textContent = msg;
+  document.getElementById('customAlertModal').classList.add('active');
+}
+
+function closeCustomAlert() {
+  document.getElementById('customAlertModal').classList.remove('active');
+}
+
+let confirmResolve = null;
+function showCustomConfirm(msg) {
+  document.getElementById('confirmMessage').textContent = msg;
+  document.getElementById('customConfirmModal').classList.add('active');
+  return new Promise(resolve => { confirmResolve = resolve; });
+}
+
+function closeCustomConfirm(result) {
+  document.getElementById('customConfirmModal').classList.remove('active');
+  if (confirmResolve) {
+    confirmResolve(result);
+    confirmResolve = null;
+  }
+}
+// ==========================================
+
+if (sessionStorage.getItem('isAdmin') === 'true') {
+  document.getElementById('loginSection').classList.add('hidden');
+  document.getElementById('dashboardSection').classList.remove('hidden');
+  renderFormKantinPicker();
+  loadMenu();
+}
+
+function loginAdmin() {
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  
+  if (user === 'admin' && pass === 'admin123') {
+    sessionStorage.setItem('isAdmin', 'true');
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('dashboardSection').classList.remove('hidden');
+    renderFormKantinPicker();
+    loadMenu();
+  } else {
+    showCustomAlert('Username atau Password Admin Salah!', 'error');
+  }
+}
+
+// ==========================================
+// FORM PILIH WARUNG (KOTAK-KOTAK)
+// ==========================================
+function renderFormKantinPicker() {
+  const container = document.getElementById('adminKantinPicker');
+  let html = '';
+  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    html += `<div class="kantin-btn ${selectedKantinForm === id ? 'active' : ''}" onclick="selectFormKantin('${id}')">${name}</div>`;
+  }
+  container.innerHTML = html;
+  document.getElementById('kantinId').value = selectedKantinForm;
+}
+
+function selectFormKantin(id) {
+  selectedKantinForm = id;
+  renderFormKantinPicker();
+}
+
+// ==========================================
+
+function editMenu(id) {
+  const item = allMenuData.find(m => m.id === id);
+  if (!item) return;
+
+  editMenuId = id; 
+  
+  selectedKantinForm = item.kantin_id;
+  renderFormKantinPicker();
+
+  document.getElementById('menuName').value = item.name;
+  document.getElementById('menuDesc').value = item.description;
+  document.getElementById('menuPrice').value = item.price;
+  document.getElementById('menuCategory').value = item.category;
+  document.getElementById('menuImage').value = ''; 
+
+  document.getElementById('formTitle').textContent = 'Edit Menu: ' + item.name;
+  document.getElementById('btnSimpan').textContent = 'Simpan Perubahan';
+  document.getElementById('btnBatal').classList.remove('hidden');
+  document.getElementById('btnHapusForm').classList.remove('hidden'); 
+  document.getElementById('labelGambar').textContent = 'Upload Gambar Baru (Opsional)';
+  document.getElementById('infoGambarLama').classList.remove('hidden');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function batalEdit() {
+  editMenuId = null; 
+  
+  selectedKantinForm = 'warung_nusantara';
+  renderFormKantinPicker();
+
+  document.getElementById('menuName').value = '';
+  document.getElementById('menuDesc').value = '';
+  document.getElementById('menuPrice').value = '';
+  document.getElementById('menuCategory').value = 'makanan';
+  document.getElementById('menuImage').value = '';
+
+  document.getElementById('formTitle').textContent = 'Tambah Menu Baru';
+  document.getElementById('btnSimpan').textContent = 'Tambah Menu';
+  document.getElementById('btnBatal').classList.add('hidden');
+  document.getElementById('btnHapusForm').classList.add('hidden'); 
+  document.getElementById('labelGambar').textContent = 'Upload Gambar Menu (Wajib jika menu baru)';
+  document.getElementById('infoGambarLama').classList.add('hidden');
+}
+
+async function simpanMenu() {
+  const btn = document.getElementById('btnSimpan');
+  btn.textContent = 'Memproses...';
+  btn.disabled = true;
+
+  const kantinId = selectedKantinForm;
+  const name = document.getElementById('menuName').value;
+  const desc = document.getElementById('menuDesc').value;
+  const price = parseInt(document.getElementById('menuPrice').value);
+  const category = document.getElementById('menuCategory').value;
+  const fileInput = document.getElementById('menuImage');
+  
+  if (!name || !desc || !price) {
+    showCustomAlert('Nama, Deskripsi, dan Harga wajib diisi!', 'error');
+    btn.textContent = editMenuId ? 'Simpan Perubahan' : 'Tambah Menu';
+    btn.disabled = false;
+    return;
+  }
+
+  if (!editMenuId && fileInput.files.length === 0) {
+    showCustomAlert('Gambar wajib diupload untuk menu baru!', 'error');
+    btn.textContent = 'Tambah Menu';
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    let imageUrl = null;
+
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
+      const filePath = `menu-baru/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await sb.storage
+        .from('gambar-menu')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = sb.storage.from('gambar-menu').getPublicUrl(filePath);
+      imageUrl = publicUrlData.publicUrl;
+    }
+
+    let dataToSave = {
+      kantin_id: kantinId,
+      name: name,
+      description: desc,
+      price: price,
+      category: category
+    };
+
+    if (imageUrl) {
+      dataToSave.image_url = imageUrl;
+    }
+
+    if (editMenuId) {
+      const { error: updateError } = await sb.from('menu').update(dataToSave).eq('id', editMenuId);
+      if (updateError) throw updateError;
+      showCustomAlert('Menu berhasil diperbarui!', 'success');
+    } else {
+      dataToSave.is_available = true;
+      const { error: insertError } = await sb.from('menu').insert([dataToSave]);
+      if (insertError) throw insertError;
+      showCustomAlert('Menu baru berhasil ditambahkan!', 'success');
+    }
+    
+    batalEdit(); 
+    loadMenu(); 
+
+  } catch (err) {
+    showCustomAlert('Gagal: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btn.textContent = editMenuId ? 'Simpan Perubahan' : 'Tambah Menu';
+    btn.disabled = false;
+  }
+}
+
+// ==========================================
+// FUNGSI HAPUS MENU (PAKE CUSTOM CONFIRM)
+// ==========================================
+async function hapusMenu(id) {
+  if (!id) return;
+
+  const yakin = await showCustomConfirm("Apakah Anda yakin ingin menghapus menu ini secara permanen?");
+  if (!yakin) return;
+
+  try {
+    const { error } = await sb.from('menu').delete().eq('id', id);
+    if (error) throw error;
+    
+    showCustomAlert('Menu berhasil dihapus!', 'success');
+    batalEdit(); 
+    loadMenu();  
+  } catch (err) {
+    showCustomAlert('Gagal menghapus menu: ' + err.message, 'error');
+  }
+}
+// ==========================================
+
+// ==========================================
+// LOGIKA TABEL & SEARCH/FILTER
+// ==========================================
+async function loadMenu() {
+  const tbody = document.getElementById('tableMenu');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
+  
+  const { data, error } = await sb.from('menu')
+    .select('*')
+    .order('kantin_id', { ascending: true })
+    .order('name', { ascending: true });
+  
+  if (error || !data) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Gagal memuat data.</td></tr>';
+    return;
+  }
+
+  allMenuData = data; 
+  
+  renderAdminFilters();
+  renderAdminTable();
+}
+
+function renderAdminFilters() {
+  const container = document.getElementById('adminWarungFilters');
+  let html = `<div class="filter-btn ${currentAdminFilter === 'semua' ? 'active' : ''}" onclick="setAdminFilter('semua')">Semua Warung</div>`;
+  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    html += `<div class="filter-btn ${currentAdminFilter === id ? 'active' : ''}" onclick="setAdminFilter('${id}')">${name}</div>`;
+  }
+  container.innerHTML = html;
+}
+
+function setAdminFilter(id) {
+  currentAdminFilter = id;
+  renderAdminFilters();
+  renderAdminTable();
+}
+
+function handleAdminSearch(val) {
+  currentAdminSearch = val.toLowerCase();
+  renderAdminTable();
+}
+
+function renderAdminTable() {
+  const tbody = document.getElementById('tableMenu');
+  let filtered = allMenuData;
+
+  if (currentAdminFilter !== 'semua') {
+    filtered = filtered.filter(m => m.kantin_id === currentAdminFilter);
+  }
+  
+  if (currentAdminSearch !== '') {
+    filtered = filtered.filter(m => m.name.toLowerCase().includes(currentAdminSearch));
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">Menu tidak ditemukan.</td></tr>';
+    return;
+  }
+
+  let html = '';
+  let currentKantin = null;
+
+  filtered.forEach(m => {
+    if (currentKantin !== m.kantin_id) {
+      currentKantin = m.kantin_id;
+      const warungName = KANTIN_NAMES[m.kantin_id] || m.kantin_id;
+      html += `
+        <tr style="background-color: #e2e8f0;">
+          <td colspan="5" style="font-weight: bold; color: #1a6b4a; font-size: 15px; padding: 12px;">
+            <i class="fas fa-store"></i> ${warungName}
+          </td>
+        </tr>
+      `;
+    }
+
+    const img = m.image_url ? m.image_url : getImageUrl(m.name);
+    
+    html += `
+      <tr>
+        <td><img src="${img}" class="img-preview" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop'"></td>
+        <td><b>${m.name}</b><br><span style="font-size:11px; color:#64748b;">${m.description}</span></td>
+        <td>${KANTIN_NAMES[m.kantin_id] || m.kantin_id}</td>
+        <td>Rp ${m.price.toLocaleString('id-ID')}</td>
+        <td>
+          <button class="btn-edit" onclick="editMenu(${m.id})">Edit</button>
+          <button class="btn-hapus-tabel" onclick="hapusMenu(${m.id})">Hapus</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+</script>
+</body>
+</html>
