@@ -5,6 +5,7 @@ const USER_ROLE = sessionStorage.getItem('user_role');
 if (!USER_ID) { window.location.href = 'index.html'; }
 
 let menu = [], cart = [], orderData = {}, activeCat = 'semua', activeKantin = null;
+let activeSearchQuery = ''; 
 let currentUserPoints = 0; 
 let activeVoucher = null; 
 let activeVoucherPoints = 0; 
@@ -45,9 +46,13 @@ function saveNotifications() {
 }
 // ==========================================
 
-const voiceAudio = new Audio('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/suara/ttsmaker-file-2026-10-25-18-49-43.mp3');
+const voiceAudio = new Audio('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/suara/ttsmaker-file-2026-10-26-12-22-20.mp3');
 voiceAudio.preload = 'auto';
 voiceAudio.volume = 1.0;
+
+const voiceAudioDineIn = new Audio('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/suara/ttsmaker-file-2026-10-26-12-12-26.mp3'); 
+voiceAudioDineIn.preload = 'auto';
+voiceAudioDineIn.volume = 1.0;
 
 function isUserEligibleForPoints() {
   return USER_ROLE === 'mahasiswa' || USER_ROLE === 'pelanggan';
@@ -121,7 +126,6 @@ const KANTIN_DATA_HOME = [
 function fmt(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
 function showToast(msg) { const t = document.getElementById('toast'); if(t) { t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); } }
 
-// FUNGSI BARU: Custom Alert (Gantiin alert browser)
 function showCustomAlert(message) {
   document.getElementById('customAlertMessage').textContent = message;
   document.getElementById('customAlertModal').classList.add('active');
@@ -188,7 +192,7 @@ function openNotificationModal() {
     list.innerHTML = notifications.map(n => `
       <div style="background: var(--bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
         <div style="font-weight: 700; color: var(--green); margin-bottom: 5px;">${KANTIN_NAMES[n.kantin_id] || n.kantin_id}</div>
-        <div style="font-size: 13px; color: var(--text); margin-bottom: 5px;">Pesanan (${n.order_type}) sudah siap diambil.</div>
+        <div style="font-size: 13px; color: var(--text); margin-bottom: 5px;">Pesanan (${n.order_type}) sudah siap.</div>
         <div style="font-size: 11px; color: var(--muted);">${n.time}</div>
       </div>
     `).join('');
@@ -277,21 +281,41 @@ function updateKantinDisplay(kantinId) {
 }
 
 function openKantinModal() {
+  const searchInput = document.getElementById('searchKantinInput');
+  if (searchInput) searchInput.value = ''; 
+  renderKantinOptions(''); 
+  document.getElementById('kantinModal').classList.add('active');
+}
+
+function filterKantinModal(query) {
+  renderKantinOptions(query);
+}
+
+function renderKantinOptions(query = '') {
   const list = document.getElementById('kantinOptionsList');
-  let html = '';
+  if (!list) return; 
   
+  let html = '';
+  const q = query.toLowerCase();
+
   for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    if (!name.toLowerCase().includes(q)) continue; 
+
     let isActive = (activeKantin === id);
+    
     html += `
-      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantinFromModal('${id}')">
-        <div class="voucher-opt-title">${name}</div>
-        ${isActive ? '<i class="fas fa-check-circle" style="color:var(--green);"></i>' : ''}
+      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantinFromModal('${id}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 10px; text-align: center; gap: 8px; cursor: pointer;">
+        <div class="voucher-opt-title" style="font-size: 13px; margin-bottom: 0; line-height: 1.2;">${name}</div>
+        ${isActive ? '<i class="fas fa-check-circle" style="color:var(--green); font-size: 18px;"></i>' : '<i class="fas fa-store" style="color:var(--muted); font-size: 18px; opacity: 0.4;"></i>'}
       </div>
     `;
   }
   
+  if (html === '') {
+    html = '<div style="grid-column: span 2; text-align: center; color: var(--muted); padding: 20px;">Warung tidak ditemukan.</div>';
+  }
+  
   list.innerHTML = html;
-  document.getElementById('kantinModal').classList.add('active');
 }
 
 function closeKantinModal() { document.getElementById('kantinModal').classList.remove('active'); }
@@ -363,7 +387,7 @@ function selectVoucherFromModal(persen, pointsUsed) {
 }
 
 // ==========================================
-// LOGIKA PILIH PEDAS (REVISI)
+// LOGIKA PILIH PEDAS
 // ==========================================
 function openSpicyModal() {
   let currentLevel = null; 
@@ -396,7 +420,7 @@ function renderSpicyOptions() {
 
 function selectSpicyOption(level) {
   tempSpicyLevel = level;
-  renderSpicyOptions(); // Cuma update tampilan ceklis
+  renderSpicyOptions(); 
 }
 
 function confirmSpicySelection() {
@@ -551,21 +575,16 @@ async function saveProfileChanges() {
   err.style.display = 'none';
 
   try {
-    // JIKA EMAIL BERUBAH (Khusus Pelanggan)
     if (newId !== USER_ID) {
-      // Cek apakah email baru udah dipake orang lain di tabel public.users
       const { data: exist } = await sb.from('users').select('id').eq('id', newId).single();
       if (exist) {
         err.textContent = "Email sudah digunakan akun lain!"; err.style.display = 'block';
         btn.disabled = false; btn.textContent = "Simpan Perubahan"; return;
       }
 
-      // Minta Supabase Auth ngirim OTP ke email baru
       const { error: authErr } = await sb.auth.updateUser({ email: newId });
-      
       if (authErr) throw authErr;
 
-      // Tampilkan modal OTP
       pendingNewEmail = newId;
       closeEditProfileModal();
       document.getElementById('otpChangeEmailModal').classList.add('active');
@@ -575,7 +594,6 @@ async function saveProfileChanges() {
       showCustomAlert("Kode OTP telah dikirim ke email baru Anda. Silakan cek kotak masuk/spam.");
       
     } else {
-      // JIKA EMAIL TETAP (Cuma ganti nama)
       const { error: updateErr } = await sb.from('users').update({ nama: newName }).eq('id', USER_ID);
       if (updateErr) throw updateErr;
 
@@ -597,7 +615,6 @@ async function saveProfileChanges() {
   }
 }
 
-// FUNGSI BARU: Konfirmasi OTP Ganti Email
 async function confirmEmailChangeOTP() {
   const token = document.getElementById('otpChangeInput').value.trim();
   const err = document.getElementById('otpChangeError');
@@ -609,7 +626,6 @@ async function confirmEmailChangeOTP() {
   err.style.display = 'none';
 
   try {
-    // 1. Verifikasi OTP email_change
     const { error: verifyErr } = await sb.auth.verifyOtp({
       email: pendingNewEmail,
       token: token,
@@ -618,20 +634,16 @@ async function confirmEmailChangeOTP() {
 
     if (verifyErr) throw verifyErr;
 
-    // 2. Jika sukses, update ID di tabel public.users
     const newName = document.getElementById('editNameInput').value.trim();
     const { error: updateErr } = await sb.from('users').update({ id: pendingNewEmail, nama: newName }).eq('id', USER_ID);
     if (updateErr) throw updateErr;
 
-    // 3. Update ID di tabel orders dan points
     await sb.from('orders').update({ user_id: pendingNewEmail }).eq('user_id', USER_ID);
     await sb.from('user_kantin_points').update({ user_id: pendingNewEmail }).eq('user_id', USER_ID);
 
-    // 4. Update session
     sessionStorage.setItem('user_id', pendingNewEmail);
     sessionStorage.setItem('user_name', newName);
 
-    // 👇 LOGOUT PAKSA DARI SUPABASE AUTH 👇
     await sb.auth.signOut();
 
     closeOtpChangeEmailModal();
@@ -765,15 +777,23 @@ async function loadKantin(kantinId) {
   updateKantinDisplay(activeKantin);
 
   const catTabs = document.getElementById('catTabs');
+  const searchContainer = document.getElementById('searchContainer'); 
 
   if (!activeKantin) {
     catTabs.style.display = 'none';
+    if (searchContainer) searchContainer.style.display = 'none'; 
     document.getElementById('menuGrid').innerHTML = '';
     document.getElementById('sectionTitle').textContent = 'Pilih Warung Terlebih Dahulu';
     return;
   }
   
   catTabs.style.display = 'flex';
+  if (searchContainer) searchContainer.style.display = 'block'; 
+  
+  activeSearchQuery = '';
+  const searchInput = document.getElementById('searchMenuInput');
+  if (searchInput) searchInput.value = '';
+
   document.getElementById('menuGrid').innerHTML = '<div style="text-align:center; padding:3rem;">Memuat menu...</div>';
   menu = await getMenu(activeKantin);
   fetchUserData(); 
@@ -789,23 +809,33 @@ async function loadKantin(kantinId) {
   }
 }
 
+function handleSearch(query) {
+  activeSearchQuery = query;
+  renderMenu(activeCat);
+}
+
 function renderMenu(cat) {
   const grid = document.getElementById('menuGrid');
   if (!activeKantin) { grid.innerHTML = ''; return; }
   
   let filtered = cat === 'semua' ? menu : menu.filter(m => m.category === cat);
-  if (filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; padding:3rem;">Menu kosong.</div>'; return; }
+
+  if (activeSearchQuery.trim() !== '') {
+    const q = activeSearchQuery.toLowerCase();
+    filtered = filtered.filter(m => m.name.toLowerCase().includes(q));
+  }
+
+  if (filtered.length === 0) { 
+    grid.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--muted);"><i class="fas fa-search" style="font-size:30px; margin-bottom:10px;"></i><br>Menu tidak ditemukan.</div>'; 
+    return; 
+  }
 
   grid.innerHTML = filtered.map(item => {
-    const imgUrl = getImageUrl(item.name);
+    const imgUrl = item.image_url ? item.image_url : getImageUrl(item.name);
     const points = item.price < 10000 ? 1 : (item.price <= 20000 ? 2 : 3);
-    
     const isAvailable = item.is_available !== false; 
-    
     const pointBadge = isUserEligibleForPoints() ? `<span style="background: #FFF3E0; color: #E65100; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap;">+${points} 🪙</span>` : '';
-    
     const habisBadge = !isAvailable ? `<span style="background: #FEE2E2; color: #DC4A3D; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap;">Habis</span>` : '';
-
     const btnHtml = isAvailable 
       ? `<button class="add-btn" onclick="addToCart(${item.id})">Tambah</button>`
       : `<button class="add-btn" style="background:#cbd5e1; cursor:not-allowed;" disabled>Habis</button>`;
@@ -910,7 +940,7 @@ function renderCart() {
 
   itemsEl.innerHTML = cart.map((c, index) => {
     const item = menu.find(m => m.id == c.id);
-    const imgUrl = getImageUrl(item.name);
+    const imgUrl = item.image_url ? item.image_url : getImageUrl(item.name);
     
     let spicyBtn = '';
     if (c.spicy !== null) {
@@ -1084,7 +1114,6 @@ async function confirmPayment() {
   };
 
   try {
-    // 👇 HITUNG TOTAL PORSI YANG LAGI DIPROSES (SEBELUM INSERT) 👇
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
@@ -1101,23 +1130,20 @@ async function confirmPayment() {
           o.items.split(';').forEach(itemStr => {
             const parts = itemStr.split('|');
             if (parts.length >= 3) {
-              activeItemsCount += parseInt(parts[2]) || 0; // parts[2] adalah Qty
+              activeItemsCount += parseInt(parts[2]) || 0;
             }
           });
         }
       });
     }
 
-    // Insert pesanan baru
     await saveOrder(finalData);
 
-    // Hitung porsi di keranjang saat ini
     const totalQtyInCart = cart.reduce((sum, item) => sum + item.qty, 0);
     const totalBusyItems = activeItemsCount + totalQtyInCart;
 
     let queueWarningHtml = '';
     
-    // 👇 MUNCULIN ALERT KALAU TOTAL PORSI (YANG LAGI ANTRI + BARU DIBELI) >= 5 👇
     if (totalBusyItems >= 5) {
       queueWarningHtml = `
         <div style="background: #FFF3CD; color: #856404; border: 1px solid #FFEEBA; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 13px; line-height: 1.5;">
@@ -1144,11 +1170,9 @@ async function confirmPayment() {
         await sb.from('user_kantin_points').insert([{ user_id: USER_ID, kantin_id: activeKantin, points: sisaPoin }]);
       }
 
-      // 👇👇 TAMBAHKAN 3 BARIS INI BIAR POIN LANGSUNG UPDATE DI LAYAR 👇👇
       currentUserPoints = sisaPoin; 
       document.getElementById('userPointsDisplay').textContent = currentUserPoints; 
       document.getElementById('modalPoints').textContent = currentUserPoints; 
-      // 👆👆 SAMPAI SINI 👆👆
     }
 
     cart = [];             
@@ -1179,19 +1203,36 @@ function resetAll() {
   updateCartBadge(); showPage('menuPage');
 }
 
-function initTakeAwayListener() {
-  sb.channel('takeaway-status-' + USER_ID)
+// ==========================================
+// REALTIME NOTIFIKASI PESANAN (DINE IN & TAKE AWAY)
+// ==========================================
+function initOrderStatusListener() {
+  sb.channel('order-status-' + USER_ID)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${USER_ID}` }, (payload) => {
       const newOrder = payload.new;
       const oldOrder = payload.old;
 
-      if (newOrder.status === 'Selesai' && oldOrder.status !== 'Selesai' && newOrder.catatan && newOrder.catatan.includes('[Take Away]')) {
+      if (newOrder.status === 'Selesai' && oldOrder.status !== 'Selesai') {
         
-        let notifiedOrders = JSON.parse(sessionStorage.getItem('notified_takeaway') || '[]');
+        let notifiedOrders = JSON.parse(sessionStorage.getItem('notified_orders_v2') || '[]');
         if (!notifiedOrders.includes(newOrder.id)) {
           notifiedOrders.push(newOrder.id);
-          sessionStorage.setItem('notified_takeaway', JSON.stringify(notifiedOrders));
+          sessionStorage.setItem('notified_orders_v2', JSON.stringify(notifiedOrders));
           
+          const isTakeAway = newOrder.catatan && newOrder.catatan.includes('[Take Away]');
+          const orderTypeStr = isTakeAway ? 'Take Away' : 'Dine In';
+
+          const modalTitle = document.getElementById('takeAwayReadyModal').querySelector('h3');
+          const modalDesc = document.getElementById('takeAwayReadyModal').querySelector('p');
+
+          if (isTakeAway) {
+            modalTitle.textContent = 'Pesanan Siap Diambil!';
+            modalDesc.innerHTML = 'Pesanan <b>Take Away</b> Anda sudah selesai dibuat. Silakan ambil di kasir.';
+          } else {
+            modalTitle.textContent = 'Pesanan Telah Disajikan!';
+            modalDesc.innerHTML = 'Pesanan <b>Dine In</b> Anda sudah selesai dibuat. Selamat menikmati hidangan Anda!';
+          }
+
           document.getElementById('takeAwayReadyModal').classList.add('active');
           
           const now = new Date();
@@ -1201,7 +1242,7 @@ function initTakeAwayListener() {
           notifications.push({
             id: newOrder.id,
             kantin_id: newOrder.kantin_id,
-            order_type: 'Take Away',
+            order_type: orderTypeStr,
             time: `${tgl} • ${jam}`,
             read: false 
           });
@@ -1214,12 +1255,21 @@ function initTakeAwayListener() {
             audioBeep.volume = 1.0; 
             audioBeep.play().catch(e => console.log('Audio autoplay diblokir browser'));
 
-            voiceAudio.currentTime = 0; 
-            voiceAudio.play().catch(err => {
-              let msg = new SpeechSynthesisUtterance("Pesanan telah selesai, silakan ambil di kasir.");
-              msg.lang = 'id-ID';
-              window.speechSynthesis.speak(msg);
-            });
+            if (isTakeAway) {
+              voiceAudio.currentTime = 0; 
+              voiceAudio.play().catch(err => {
+                let msg = new SpeechSynthesisUtterance("Pesanan Take Away Anda telah selesai, silakan ambil di kasir.");
+                msg.lang = 'id-ID';
+                window.speechSynthesis.speak(msg);
+              });
+            } else {
+              voiceAudioDineIn.currentTime = 0; 
+              voiceAudioDineIn.play().catch(err => {
+                let msg = new SpeechSynthesisUtterance("Pesanan Dine In Anda telah selesai disajikan, selamat menikmati.");
+                msg.lang = 'id-ID';
+                window.speechSynthesis.speak(msg);
+              });
+            }
             
           } catch(e) { console.log('Fitur suara tidak didukung'); }
         }
@@ -1228,26 +1278,33 @@ function initTakeAwayListener() {
     .subscribe();
 }
 
+// ==========================================
+// REALTIME UPDATE MENU (INSERT, UPDATE, DELETE)
+// ==========================================
 function initMenuRealtimeListener(kantinId) {
   if (menuChannel) {
     sb.removeChannel(menuChannel);
   }
 
+  // Dengarkan SEMUA event (INSERT, UPDATE, DELETE) di tabel menu
   menuChannel = sb.channel('menu-status-' + kantinId)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'menu', filter: `kantin_id=eq.${kantinId}` }, (payload) => {
-      const updatedMenu = payload.new;
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'menu', filter: `kantin_id=eq.${kantinId}` }, async (payload) => {
       
-      const index = menu.findIndex(m => m.id === updatedMenu.id);
+      // Ambil data menu terbaru dari server
+      const updatedMenuData = await getMenu(kantinId);
       
-      if (index !== -1) {
-        menu[index] = updatedMenu;
-        
+      // Kalau datanya ada, update variabel global dan render ulang
+      if (updatedMenuData) {
+        menu = updatedMenuData;
         renderMenu(activeCat);
 
-        if (updatedMenu.is_available === false) {
-          showToast(`⚠️ ${updatedMenu.name} baru saja habis!`);
-        } else {
-          showToast(`✅ ${updatedMenu.name} sudah tersedia kembali!`);
+        // Kasih notifikasi kecil di pojok layar
+        if (payload.eventType === 'INSERT') {
+          showToast(`✅ Menu baru telah ditambahkan!`);
+        } else if (payload.eventType === 'UPDATE') {
+          showToast(`🔄 Daftar menu diperbarui!`);
+        } else if (payload.eventType === 'DELETE') {
+          showToast(`❌ Ada menu yang telah dihapus.`);
         }
       }
     })
@@ -1273,7 +1330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { once: true });
 
-  initTakeAwayListener();
+  initOrderStatusListener();
 
   const slides = document.querySelectorAll('.hero-bg');
   if (slides.length > 0) {
