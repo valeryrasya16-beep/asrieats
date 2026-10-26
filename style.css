@@ -67,7 +67,11 @@ nav {
 
 /* --- SISA CSS LU YANG LAMA TETAP SAMA --- */
 .hero select { padding: 12px 24px; border-radius: 30px; border: 1.5px solid var(--text); background: var(--white); font-size: 14px; font-weight: 600; cursor: pointer; outline: none; }
-.about-section { max-width: 900px; margin: 4rem auto 2rem; padding: 0 5%; position: relative; }
+
+/* =========================================
+   UPDATE: ABOUT SECTION (FULL WIDTH DI DESKTOP)
+   ========================================= */
+.about-section { max-width: 1300px; margin: 4rem auto 2rem; padding: 0 5%; position: relative; }
 
 .about-section::before {
   content: "";
@@ -79,16 +83,20 @@ nav {
   border-radius: 2px;
 }
 
-.about-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 5px; color: var(--green); }
-.about-subtitle { font-size: 1.1rem; color: var(--accent); font-weight: 600; margin-bottom: 25px; }
-.about-desc { font-size: 15.5px; line-height: 1.8; color: var(--muted); margin-bottom: 20px; }
-.about-heading { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-top: 35px; margin-bottom: 15px; color: var(--text); }
-.about-list { padding-left: 20px; margin-bottom: 20px; }
+/* Teks dibiarkan full melebar mengikuti container tanpa batasan 900px */
+.about-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 5px; color: var(--green); text-align: center; }
+.about-subtitle { font-size: 1.1rem; color: var(--accent); font-weight: 600; margin-bottom: 25px; text-align: center; }
+.about-desc { font-size: 15.5px; line-height: 1.8; color: var(--muted); margin-bottom: 20px; text-align: left; }
+.about-heading { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-top: 35px; margin-bottom: 15px; color: var(--text); text-align: left; }
+.about-list { padding-left: 20px; margin-bottom: 20px; text-align: left; }
 .about-list li { font-size: 15.5px; line-height: 1.8; color: var(--muted); margin-bottom: 15px; }
 .about-list strong { color: var(--text); }
-.location-box { background: var(--white); border: 1px solid var(--border); padding: 25px; border-radius: 12px; margin-top: 35px; }
+.location-box { background: var(--white); border: 1px solid var(--border); padding: 25px; border-radius: 12px; margin-top: 35px; text-align: left; width: 100%; max-width: 800px; }
 
-.canteen-section { padding: 4rem 5%; max-width: 1200px; margin: 0 auto; }
+/* =========================================
+   UPDATE: CANTEEN SECTION BIAR MEMENUHI LAYAR
+   ========================================= */
+.canteen-section { padding: 4rem 5%; max-width: 1400px; margin: 0 auto; }
 .canteen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
 .canteen-card { background: var(--white); border: 1px solid var(--border); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; border-radius: 12px; }
 .canteen-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.08); transform: translateY(-5px); }
@@ -106,7 +114,7 @@ nav {
 .cat-btn { background: transparent; border: 1px solid var(--border); padding: 8px 20px; border-radius: 30px; cursor: pointer; font-size: 14px; transition: 0.2s; color: var(--text); }
 .cat-btn.active, .cat-btn:hover { background: var(--primary-btn); color: var(--white); border-color: var(--primary-btn); }
 
-.menu-section { padding: 1.5rem 5% 4rem; max-width: 1200px; margin: 0 auto; }
+.menu-section { padding: 1.5rem 5% 4rem; max-width: 1300px; margin: 0 auto; }
 .section-title { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 2rem; text-align: center; color: var(--green); }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem; }
 .menu-card { background: var(--white); border: 1px solid var(--border); padding: 1rem; text-align: center; transition: 0.3s; border-radius: 12px; }
@@ -432,4 +440,7 @@ nav {
   /* --- FIX TAMBAHAN UNTUK HALAMAN SUKSES --- */
   .success-page { padding: 2rem 5% !important; }
   .success-card { padding: 1.5rem !important; }
+
+  /* Biar about section di HP tetep rata kiri rapi */
+  .about-title, .about-subtitle { text-align: left; }
 }
