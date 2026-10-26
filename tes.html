@@ -89,7 +89,7 @@
 
 <!-- ================= HALAMAN MENU ================= -->
 <div class="page" id="menuPage">
-  <div class="hero" style="padding: 15px 0 10px; overflow: hidden;">
+  <div class="hero" style="padding: 15px 0 10px; overflow: hidden; position: relative; z-index: 10;">
     
     <div class="marquee-container">
       <div class="marquee-content">
@@ -104,7 +104,7 @@
       </div>
     </div>
 
-    <button id="kantinSelectBtn" onclick="openKantinModal()" style="margin-top: 30px; padding: 12px 24px; border-radius: 30px; border: 1.5px solid var(--text); background: var(--white); font-size: 14px; font-weight: 600; cursor: pointer; outline: none; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s;">
+    <button id="kantinSelectBtn" onclick="openKantinModal()" style="position: relative; z-index: 20; margin-top: 30px; padding: 12px 24px; border-radius: 30px; border: 1.5px solid var(--text); background: var(--white); font-size: 14px; font-weight: 600; cursor: pointer; outline: none; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s;">
       <span id="kantinSelectText">Silahkan Pilih Warung</span>
       <i class="fas fa-chevron-down" style="font-size: 12px; color: var(--muted);"></i>
     </button>
@@ -115,6 +115,14 @@
     <button class="cat-btn" onclick="filterCat('makanan', this)">Makanan</button>
     <button class="cat-btn" onclick="filterCat('minuman', this)">Minuman</button>
     <button class="cat-btn" onclick="filterCat('snack', this)">Snack</button>
+  </div>
+
+  <!-- FITUR SEARCH MENU -->
+  <div id="searchContainer" style="display: none; text-align: center; margin-bottom: 20px; padding: 0 5%;">
+    <div style="position: relative; max-width: 500px; margin: 0 auto;">
+      <i class="fas fa-search" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--muted);"></i>
+      <input type="text" id="searchMenuInput" placeholder="Cari nama menu..." oninput="handleSearch(this.value)" style="width: 100%; padding: 12px 15px 12px 45px; border: 1.5px solid var(--border); border-radius: 30px; font-size: 14px; outline: none; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
   </div>
 
   <div class="menu-section">
@@ -183,7 +191,7 @@
   </div>
 </div>
 
-<!-- ================= HALAMAN SUKSES (UDAH DIREVISI) ================= -->
+<!-- ================= HALAMAN SUKSES ================= -->
 <div class="page" id="successPage">
   <div class="success-page">
     <div class="success-card" style="padding: 25px 20px;">
@@ -193,10 +201,8 @@
       <h1 style="font-family:'Playfair Display',serif; margin-bottom: 5px; font-size: 28px;">Pesanan Diterima!</h1>
       <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Pesanan Anda sedang disiapkan oleh warung.</p>
       
-      <!-- STRUK / INFO PESANAN -->
       <div class="order-info" id="successInfo" style="margin-bottom: 20px;"></div>
       
-      <!-- INFO PENTING DIGABUNG KE SINI BIAR SEJAJAR -->
       <div style="text-align: left; font-size: 13px; color: var(--text); margin-bottom: 20px; padding: 15px; background: #FAF8F3; border-radius: 8px; border: 1px dashed var(--border); line-height: 1.5;">
         <i class="fas fa-bell" style="color: var(--accent); margin-right: 5px;"></i> <b>Informasi:</b><br>
         Jika pesanan (Take Away) selesai, akan ada pemberitahuan suara. Anda juga bisa memantau status melalui menu <b>Notifikasi (Lonceng)</b> di atas.
@@ -212,7 +218,6 @@
   <div class="modal-content" style="max-width: 400px; padding: 25px; text-align: left;">
     <button class="close-btn" onclick="closeNotificationModal()">✕</button>
     
-    <!-- HEADER NOTIFIKASI -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 30px;">
       <h3 style="font-family:'Playfair Display',serif; margin: 0;">Notifikasi Pesanan</h3>
       <button onclick="openClearNotifModal()" style="background:none; border:none; color:var(--danger); font-size:12px; font-weight:600; cursor:pointer;">
@@ -220,9 +225,7 @@
       </button>
     </div>
     
-    <div id="notifList" style="max-height: 350px; overflow-y: auto;">
-      <!-- Diisi via JS -->
-    </div>
+    <div id="notifList" style="max-height: 350px; overflow-y: auto;"></div>
   </div>
 </div>
 
@@ -297,10 +300,16 @@
 
 <!-- MODAL PILIH WARUNG -->
 <div class="modal-overlay" id="kantinModal" style="z-index: 3000;">
-  <div class="modal-content" style="max-width: 400px; padding: 20px;">
+  <div class="modal-content" style="max-width: 450px; padding: 20px;">
     <button class="close-btn" onclick="closeKantinModal()">✕</button>
     <h3 style="font-family:'Playfair Display',serif; text-align:center; margin-bottom:15px;">Pilih Warung</h3>
-    <div id="kantinOptionsList" style="max-height: 300px; overflow-y: auto; display:flex; flex-direction:column; gap:10px;"></div>
+    
+    <div style="position: relative; margin-bottom: 15px;">
+      <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--muted);"></i>
+      <input type="text" id="searchKantinInput" placeholder="Cari nama warung..." oninput="filterKantinModal(this.value)" style="width: 100%; padding: 10px 10px 10px 40px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; font-family: inherit;">
+    </div>
+
+    <div id="kantinOptionsList" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; max-height: 400px; overflow-y: auto;"></div>
   </div>
 </div>
 
@@ -365,7 +374,7 @@
   </div>
 </div>
 
-<!-- MODAL PILIH LEVEL PEDAS (UDAH DIREVISI) -->
+<!-- MODAL PILIH LEVEL PEDAS -->
 <div class="modal-overlay" id="spicyModal" style="z-index: 3000;">
   <div class="modal-content" style="max-width: 400px; padding: 20px;">
     <button class="close-btn" onclick="closeSpicyModal()">✕</button>
@@ -373,7 +382,6 @@
     
     <div id="spicyOptionsList" style="max-height: 300px; overflow-y: auto; display:flex; flex-direction:column; gap:10px; margin-bottom: 15px;"></div>
     
-    <!-- TOMBOL OK / KONFIRMASI (BARU) -->
     <button class="btn-primary" onclick="confirmSpicySelection()" style="margin-top: 5px;">Pilih & Tambahkan</button>
   </div>
 </div>
