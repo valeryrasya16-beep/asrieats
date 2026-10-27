@@ -44,7 +44,6 @@
   .badge-tipe { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; white-space: nowrap; }
   .badge-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #166534; font-weight: 600; white-space: nowrap; }
 
-  /* CSS UNTUK TOGGLE SWITCH (SAKLAR) */
   .switch { position: relative; display: inline-block; width: 46px; height: 24px; vertical-align: middle; margin-right: 8px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
@@ -64,7 +63,15 @@
 
 <div class="header">
   <div class="brand"><h1 id="headerTitle">ASRIEATS Kasir</h1></div>
-  <button class="btn-logout" onclick="openLogoutModal()">Logout</button>
+  <div style="display: flex; align-items: center; gap: 15px;">
+    
+    <!-- SAKLAR DIHAPUS, GANTI JADI LABEL INFO -->
+    <div style="display: flex; align-items: center; background: #e8f5ee; padding: 8px 15px; border-radius: 20px; border: 1px solid #1a6b4a;">
+      <i class="fas fa-store" style="color: #1a6b4a; margin-right: 8px;"></i>
+      <span style="font-size: 13px; font-weight: 600; color: #1a6b4a;">Status: Buka</span>
+    </div>
+    <button class="btn-logout" onclick="openLogoutModal()">Logout</button>
+  </div>
 </div>
 
 <div class="stats-grid">
@@ -88,6 +95,7 @@
   <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Pesanan Aktif</button>
   <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">Riwayat Selesai</button>
   <button class="tab-btn" id="tabMenu" onclick="switchTab('menu')">Kelola Menu</button>
+  <button class="tab-btn" id="tabReview" onclick="switchTab('review')">Ulasan Pelanggan</button>
 </div>
 
 <div class="filter-box" id="filterBox">
@@ -136,6 +144,17 @@
   </table>
 </div>
 
+<!-- TABEL ULASAN -->
+<div class="table-container" id="tableReview" style="display: none;">
+  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+    <h3 style="color: #1a6b4a; margin: 0;">Ringkasan Ulasan</h3>
+    <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">
+      <span id="avgRating">0.0</span> <i class="fas fa-star"></i>
+    </div>
+  </div>
+  <div id="reviewList" style="padding: 20px; max-height: 500px; overflow-y: auto;"></div>
+</div>
+
 <div id="printArea" style="display:none;"></div>
 <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#1e293b; color:white; padding:10px 20px; border-radius:20px; opacity:0; transition:0.3s; z-index:9999;"></div>
 
@@ -159,7 +178,7 @@
       <i class="fas fa-sign-out-alt"></i>
     </div>
     <h3 style="font-size: 20px; margin-bottom: 10px; color: #1e293b;">Yakin Mau Logout?</h3>
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">Anda harus masuk kembali untuk bisa mengakses dashboard kasir.</p>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">Warung akan otomatis ditutup dan Anda harus login kembali untuk membukanya.</p>
     <div style="display: flex; gap: 10px;">
       <button class="btn-action" onclick="closeLogoutModal()" style="flex: 1; background: #e2e8f0; color: #1e293b; padding: 12px; font-size: 14px; margin: 0;">Batal</button>
       <button class="btn-action" onclick="executeLogout()" style="flex: 1; background: #dc4a3d; color: white; padding: 12px; font-size: 14px; margin: 0;">Logout</button>
@@ -246,8 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkAuth() {
-  if (!KANTIN_ID || !KASIR_NAME) { window.location.href = '/'; return; }
+  if (!KANTIN_ID || !KASIR_NAME) { window.location.href = 'index.html'; return; }
   document.getElementById('headerTitle').textContent = (KANTIN_NAMES[KANTIN_ID] || 'Kasir') + ' - ' + KASIR_NAME;
+  
+  // Pastikan status di database jadi TRUE pas dashboard kebuka
+  sb.from('kantins').update({ is_open: true }).eq('id', KANTIN_ID).then();
 }
 
 function showToast(msg) {
@@ -261,12 +283,21 @@ function switchTab(tab) {
   document.getElementById('tabActive').classList.toggle('active', tab === 'active');
   document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
   document.getElementById('tabMenu').classList.toggle('active', tab === 'menu');
+  document.getElementById('tabReview').classList.toggle('active', tab === 'review');
   
+  document.getElementById('tableReview').style.display = 'none';
+
   if (tab === 'menu') {
     document.getElementById('filterBox').style.display = 'none';
     document.getElementById('tableOrders').style.display = 'none';
     document.getElementById('tableMenu').style.display = 'block';
     fetchMenuData();
+  } else if (tab === 'review') {
+    document.getElementById('filterBox').style.display = 'none';
+    document.getElementById('tableOrders').style.display = 'none';
+    document.getElementById('tableMenu').style.display = 'none';
+    document.getElementById('tableReview').style.display = 'block';
+    fetchReviews();
   } else {
     document.getElementById('filterBox').style.display = 'flex';
     document.getElementById('tableOrders').style.display = 'block';
@@ -326,6 +357,78 @@ async function toggleMenuStatus(id, currentStatus) {
     showToast(newStatus ? 'Menu Tersedia' : 'Menu ditandai Habis');
     fetchMenuData(); 
   }
+}
+
+// ==========================================
+// LOGIKA ULASAN PELANGGAN (UPDATED)
+// ==========================================
+async function fetchReviews() {
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '<p style="text-align:center; color:#64748b;">Memuat ulasan...</p>';
+
+  // Ambil ulasan dan join ke tabel orders buat dapetin item pesanannya
+  const { data, error } = await sb.from('reviews')
+    .select('*, orders(items)')
+    .eq('kantin_id', KANTIN_ID)
+    .order('created_at', { ascending: false });
+  
+  if (error) { showToast('Gagal memuat ulasan'); return; }
+  
+  if (!data || data.length === 0) {
+    document.getElementById('avgRating').textContent = '0.0';
+    list.innerHTML = '<p style="text-align:center; color:#64748b; padding: 30px;">Belum ada ulasan untuk warung ini.</p>';
+    return;
+  }
+
+  // Hitung rata-rata
+  const total = data.reduce((sum, r) => sum + r.rating, 0);
+  const avg = (total / data.length).toFixed(1);
+  document.getElementById('avgRating').textContent = avg;
+
+  // Render list ulasan
+  list.innerHTML = data.map(r => {
+    const d = new Date(r.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    let stars = '';
+    for(let i=1; i<=5; i++) {
+      stars += `<i class="${i <= r.rating ? 'fas' : 'far'} fa-star" style="color: #f59e0b; font-size: 16px;"></i>`;
+    }
+    
+    // Tampilin ID User (email/nama) sebagai pengganti nama
+    const userName = r.user_id.split('@')[0]; // Ambil sebelum @ kalo email
+
+    // Parse nama menu dari string items
+    let menuNames = '';
+    if (r.orders && r.orders.items) {
+      // Items formatnya: "Nama Menu|Harga|Qty|Total|Spicy|Note; Nama Menu2..."
+      const itemsArray = r.orders.items.split(';');
+      const uniqueNames = new Set();
+      
+      itemsArray.forEach(item => {
+        const name = item.split('|')[0];
+        if (name) uniqueNames.add(name);
+      });
+      
+      menuNames = Array.from(uniqueNames).join(', ');
+    }
+
+    return `
+      <div style="border-bottom: 1px dashed #e2e8f0; padding: 15px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <div style="font-weight: 600; color: #1e293b;">${userName}</div>
+          <div style="font-size: 12px; color: #64748b;">${d}</div>
+        </div>
+        <div style="margin-bottom: 8px; display: flex; gap: 2px;">${stars}</div>
+        ${r.comment ? `<div style="font-size: 14px; color: #475569; font-style: italic; margin-bottom: 8px;">"${r.comment}"</div>` : ''}
+        
+        <!-- TAMPILAN MENU YANG DIULAS -->
+        ${menuNames ? `
+          <div style="background: #e8f5ee; padding: 6px 12px; border-radius: 6px; display: inline-block; font-size: 12px; color: #1a6b4a; font-weight: 600;">
+            <i class="fas fa-utensils"></i> ${menuNames}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
 }
 // ==========================================
 
@@ -616,9 +719,12 @@ function closeLogoutModal() {
   document.getElementById('logoutModal').classList.remove('active');
 }
 
-function executeLogout() {
+async function executeLogout() {
+  // --- TUTUP WARUNG OTOMATIS SAAT LOGOUT ---
+  await sb.from('kantins').update({ is_open: false }).eq('id', KANTIN_ID);
+  
   sessionStorage.clear(); 
-  window.location.href = '/'; 
+  window.location.href = 'index.html'; 
 }
 
 checkAuth();
