@@ -20,6 +20,10 @@
   button.btn-danger { width: 100%; padding: 12px; background: #dc4a3d; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
   button.btn-danger:hover { background: #b91c1c; }
 
+  /* STYLE TOMBOL LOGOUT */
+  button.btn-logout { background: #dc4a3d; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  button.btn-logout:hover { background: #b91c1c; }
+
   .hidden { display: none !important; }
   table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
   th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
@@ -43,29 +47,14 @@
   .filter-btn { padding: 8px 16px; border: 1px solid #cbd5e1; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
   .filter-btn.active { background: #1a6b4a; color: white; border-color: #1a6b4a; }
 
-  /* ========================================== */
-  /* CSS BUAT CUSTOM MODAL (PENGGANTI ALERT)    */
-  /* ========================================== */
-  .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 9999;
-    display: none; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.2s ease;
-  }
+  /* CSS BUAT CUSTOM MODAL */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
   .modal-overlay.active { display: flex; opacity: 1; }
-  
-  .modal-box {
-    background: white; padding: 25px; border-radius: 12px;
-    max-width: 350px; width: 90%; text-align: center;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    transform: translateY(20px); transition: transform 0.2s ease;
-  }
+  .modal-box { background: white; padding: 25px; border-radius: 12px; max-width: 350px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transform: translateY(20px); transition: transform 0.2s ease; }
   .modal-overlay.active .modal-box { transform: translateY(0); }
-
   .modal-icon { font-size: 45px; margin-bottom: 15px; }
   .modal-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 10px; color: #1e293b; }
   .modal-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
-  
   .modal-buttons { display: flex; gap: 10px; }
   .modal-buttons button { flex: 1; margin-top: 0; padding: 10px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; font-size: 14px; transition: 0.2s; }
   .btn-modal-batal { background: #e2e8f0; color: #334155; }
@@ -89,11 +78,51 @@
 
   <!-- DASHBOARD ADMIN -->
   <div id="dashboardSection" class="hidden">
+    
+    <!-- HEADER LOGOUT ADMIN -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+      <button class="btn-logout" onclick="openLogoutModal()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+
+    <!-- FITUR TAMBAH WARUNG BARU -->
+    <div class="card" style="border: 2px dashed #1a6b4a;">
+      <h2>Tambah Warung Baru</h2>
+      <p style="text-align: center; font-size: 13px; color: #64748b; margin-bottom: 20px;">Daftarkan tenant baru di sini. Warung akan otomatis berstatus TUTUP sampai kasir login.</p>
+      <input type="text" id="newKantinId" placeholder="ID Warung (huruf kecil tanpa spasi, cth: warung_baru)">
+      <input type="text" id="newKantinName" placeholder="Nama Warung (cth: Warung Baru Enak)">
+      <input type="text" id="newKantinPassword" placeholder="Password untuk Login Kasir">
+      
+      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Upload Foto Warung</label>
+      <input type="file" id="newKantinImage" accept="image/*" style="border: none; padding: 0; margin-bottom: 15px;">
+      
+      <button class="btn-primary" onclick="simpanWarungBaru()">+ Daftarkan Warung</button>
+    </div>
+
+    <!-- FITUR HAPUS WARUNG -->
+    <div class="card">
+      <h2>Daftar Warung Saat Ini</h2>
+      <div style="max-height: 300px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Foto & Nama Warung</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableKantin">
+            <!-- Diisi JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="card">
       <h2 id="formTitle">Tambah Menu Baru</h2>
       
       <label style="font-size:12px; font-weight:bold;">Pilih Warung</label>
-      <input type="hidden" id="kantinId" value="warung_nusantara">
+      <input type="hidden" id="kantinId" value="">
       <div class="kantin-grid" id="adminKantinPicker"></div>
 
       <label style="font-size:12px; font-weight:bold;">Nama Menu</label>
@@ -118,8 +147,6 @@
 
       <button class="btn-primary" onclick="simpanMenu()" id="btnSimpan">Tambah Menu</button>
       <button class="btn-danger hidden" onclick="batalEdit()" id="btnBatal">Batal Edit</button>
-      
-      <!-- TOMBOL HAPUS DI DALAM FORM EDIT -->
       <button class="btn-danger hidden" onclick="hapusMenu(editMenuId)" id="btnHapusForm" style="background: #b91c1c;">Hapus Menu Ini</button>
     </div>
 
@@ -143,9 +170,7 @@
               <th>Aksi</th>
             </tr>
           </thead>
-          <tbody id="tableMenu">
-            <!-- Diisi JS -->
-          </tbody>
+          <tbody id="tableMenu"></tbody>
         </table>
       </div>
     </div>
@@ -153,9 +178,7 @@
 
 </div>
 
-<!-- ========================================== -->
-<!-- MODAL CUSTOM ALERT (INFO / SUKSES / ERROR) -->
-<!-- ========================================== -->
+<!-- MODAL CUSTOM ALERT -->
 <div class="modal-overlay" id="customAlertModal">
   <div class="modal-box">
     <div class="modal-icon" id="alertIcon" style="color: #1a6b4a;"><i class="fas fa-check-circle"></i></div>
@@ -167,9 +190,7 @@
   </div>
 </div>
 
-<!-- ========================================== -->
-<!-- MODAL CUSTOM CONFIRM (KONFIRMASI HAPUS)    -->
-<!-- ========================================== -->
+<!-- MODAL CUSTOM CONFIRM (HAPUS) -->
 <div class="modal-overlay" id="customConfirmModal">
   <div class="modal-box">
     <div class="modal-icon" style="color: #dc4a3d;"><i class="fas fa-trash-alt"></i></div>
@@ -182,57 +203,29 @@
   </div>
 </div>
 
+<!-- MODAL KONFIRMASI LOGOUT -->
+<div class="modal-overlay" id="logoutConfirmModal">
+  <div class="modal-box">
+    <div class="modal-icon" style="color: #dc4a3d;"><i class="fas fa-sign-out-alt"></i></div>
+    <h3 class="modal-title">Yakin Mau Logout?</h3>
+    <p class="modal-desc">Anda harus login kembali untuk mengakses dashboard admin.</p>
+    <div class="modal-buttons">
+      <button class="btn-modal-batal" onclick="closeLogoutModal()">Batal</button>
+      <button class="btn-modal-danger" onclick="executeLogoutAdmin()">Ya, Logout</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const KANTIN_NAMES = { 
-  'warung_nusantara': 'Warung Nusantara', 
-  'warung_sederhana': 'Warung Sederhana', 
-  'warung_modern': 'Warung Modern',
-  'warung_bakso_joss': 'Warung Bakso Joss',
-  'warung_mie_ayam': 'Warung Mie Ayam',
-  'warung_wareg': 'Warung Wareg'
-};
+let KANTIN_NAMES = {}; 
+let KANTIN_IMAGES = {};
 
 const BUCKET_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/";
-const IMAGE_MAP = {
-  'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Ayam S': 'nasi bakar.jpg',
-  'Nasi Bakar Ayam L': 'nasi bakar.jpg',
-  'Nasi Bakar Ayam XL': 'nasi bakar.jpg',
-  'Nasi Bakar Usus S': 'nasi bakar usus .jpg',
-  'Nasi Bakar Usus L': 'nasi bakar usus .jpg',
-  'Nasi Bakar Usus XL': 'nasi bakar usus .jpg',
-  'Mineral': 'air mineral.jpg',
-  'Nasi Ayam Bakar': 'nasi ayam bakar.jpg',
-  'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg',
-  'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg',
-  'Es Teh': 'Es Teh..jpg',
-  'Dimsum': 'Dimsum.jpg',
-  'Spaghetti Carbonara': 'Resep-Spaghetti-Carbonara-Gurih-dan-Creamy-Ala-Restoran-Italia-.jpg.webp',       
-  'Spaghetti Aglio e Olio': '28111939213_fc18b29d8f_o.jpg',    
-  'Spaghetti Bolognese': 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Spaghetti.jpg',
-  'Kroket': 'Kroket.jpg',
-  'Mini Pizza': 'Mini Pizza.jpg',
-  'Bakso Kecil': 'mie bakso kecil.jpg',
-  'Bakso Besar': 'Bakso Biasa.jpg',
-  'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg',
-  'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp',
-  'Mie Ayam': 'Mie Ayam Biasa.jpg',
-  'Mie Ayam + Bakso': 'mie ayam + bakso.jpg',
-  'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg',
-  'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg',
-  'Nasi Goreng': 'Nasi Goreng..jpg',
-  'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg',
-  'Mie Goreng': 'Mie Goreng..jpg',
-  'Mie Goreng Seafood': 'mie goreng seafood.jpg',
-  'Mie Rebus': 'mie rebus.jpg',
-  'Kwetiau': 'Kwetiau Goreng.jpg'
-};
+const IMAGE_MAP = { 'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg', 'Nasi Bakar Ayam S': 'nasi bakar.jpg', 'Nasi Bakar Ayam L': 'nasi bakar.jpg', 'Nasi Bakar Ayam XL': 'nasi bakar.jpg', 'Nasi Bakar Usus S': 'nasi bakar usus .jpg', 'Nasi Bakar Usus L': 'nasi bakar usus .jpg', 'Nasi Bakar Usus XL': 'nasi bakar usus .jpg', 'Mineral': 'air mineral.jpg', 'Nasi Ayam Bakar': 'nasi ayam bakar.jpg', 'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg', 'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg', 'Es Teh': 'Es Teh..jpg', 'Dimsum': 'Dimsum.jpg', 'Spaghetti Carbonara': 'Resep-Spaghetti-Carbonara-Gurih-dan-Creamy-Ala-Restoran-Italia-.jpg.webp', 'Spaghetti Aglio e Olio': '28111939213_fc18b29d8f_o.jpg', 'Spaghetti Bolognese': 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Spaghetti.jpg', 'Kroket': 'Kroket.jpg', 'Mini Pizza': 'Mini Pizza.jpg', 'Bakso Kecil': 'mie bakso kecil.jpg', 'Bakso Besar': 'Bakso Biasa.jpg', 'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg', 'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp', 'Mie Ayam': 'Mie Ayam Biasa.jpg', 'Mie Ayam + Bakso': 'mie ayam + bakso.jpg', 'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg', 'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg', 'Nasi Goreng': 'Nasi Goreng..jpg', 'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg', 'Mie Goreng': 'Mie Goreng..jpg', 'Mie Goreng Seafood': 'mie goreng seafood.jpg', 'Mie Rebus': 'mie rebus.jpg', 'Kwetiau': 'Kwetiau Goreng.jpg' };
 
 function getImageUrl(menuName) {
   const fileName = IMAGE_MAP[menuName];
@@ -247,81 +240,202 @@ let allMenuData = [];
 let editMenuId = null; 
 let currentAdminFilter = 'semua';
 let currentAdminSearch = '';
-let selectedKantinForm = 'warung_nusantara';
+let selectedKantinForm = '';
 
 // ==========================================
-// FUNGSI CUSTOM MODAL (PENGGANTI ALERT/CONFIRM)
+// FUNGSI CUSTOM MODAL
 // ==========================================
 function showCustomAlert(msg, type = 'success') {
   const icon = document.getElementById('alertIcon');
   const title = document.getElementById('alertTitle');
-  
-  if (type === 'success') {
-    icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-    icon.style.color = '#1a6b4a';
-    title.textContent = 'Berhasil';
-  } else if (type === 'error') {
-    icon.innerHTML = '<i class="fas fa-times-circle"></i>';
-    icon.style.color = '#dc4a3d';
-    title.textContent = 'Gagal';
-  } else {
-    icon.innerHTML = '<i class="fas fa-info-circle"></i>';
-    icon.style.color = '#f59e0b';
-    title.textContent = 'Informasi';
-  }
-
+  if (type === 'success') { icon.innerHTML = '<i class="fas fa-check-circle"></i>'; icon.style.color = '#1a6b4a'; title.textContent = 'Berhasil'; } 
+  else if (type === 'error') { icon.innerHTML = '<i class="fas fa-times-circle"></i>'; icon.style.color = '#dc4a3d'; title.textContent = 'Gagal'; } 
+  else { icon.innerHTML = '<i class="fas fa-info-circle"></i>'; icon.style.color = '#f59e0b'; title.textContent = 'Informasi'; }
   document.getElementById('alertMessage').textContent = msg;
   document.getElementById('customAlertModal').classList.add('active');
 }
-
-function closeCustomAlert() {
-  document.getElementById('customAlertModal').classList.remove('active');
-}
-
+function closeCustomAlert() { document.getElementById('customAlertModal').classList.remove('active'); }
 let confirmResolve = null;
-function showCustomConfirm(msg) {
-  document.getElementById('confirmMessage').textContent = msg;
-  document.getElementById('customConfirmModal').classList.add('active');
-  return new Promise(resolve => { confirmResolve = resolve; });
-}
+function showCustomConfirm(msg) { document.getElementById('confirmMessage').textContent = msg; document.getElementById('customConfirmModal').classList.add('active'); return new Promise(resolve => { confirmResolve = resolve; }); }
+function closeCustomConfirm(result) { document.getElementById('customConfirmModal').classList.remove('active'); if (confirmResolve) { confirmResolve(result); confirmResolve = null; } }
 
-function closeCustomConfirm(result) {
-  document.getElementById('customConfirmModal').classList.remove('active');
-  if (confirmResolve) {
-    confirmResolve(result);
-    confirmResolve = null;
-  }
+// LOGIKA LOGOUT
+function openLogoutModal() { document.getElementById('logoutConfirmModal').classList.add('active'); }
+function closeLogoutModal() { document.getElementById('logoutConfirmModal').classList.remove('active'); }
+function executeLogoutAdmin() { 
+  sessionStorage.removeItem('isAdmin'); 
+  window.location.reload(); 
 }
 // ==========================================
 
 if (sessionStorage.getItem('isAdmin') === 'true') {
   document.getElementById('loginSection').classList.add('hidden');
   document.getElementById('dashboardSection').classList.remove('hidden');
-  renderFormKantinPicker();
-  loadMenu();
+  initAdminData();
 }
 
 function loginAdmin() {
   const user = document.getElementById('adminUser').value;
   const pass = document.getElementById('adminPass').value;
-  
   if (user === 'admin' && pass === 'admin123') {
     sessionStorage.setItem('isAdmin', 'true');
     document.getElementById('loginSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
-    renderFormKantinPicker();
-    loadMenu();
+    initAdminData();
   } else {
     showCustomAlert('Username atau Password Admin Salah!', 'error');
   }
 }
 
+// NARIK DATA WARUNG & MENU
+async function initAdminData() {
+  await fetchKantins();
+  await loadMenu();
+}
+
+async function fetchKantins() {
+  const { data, error } = await sb.from('kantins').select('id, nama, img_url');
+  if (!error && data) {
+    KANTIN_NAMES = {}; 
+    KANTIN_IMAGES = {};
+    data.forEach(k => { 
+      KANTIN_NAMES[k.id] = k.nama; 
+      KANTIN_IMAGES[k.id] = k.img_url || 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Nusantara.png'; // Fallback
+    });
+    
+    if (data.length > 0 && !selectedKantinForm) {
+      selectedKantinForm = data[0].id;
+    }
+    renderFormKantinPicker();
+    renderKantinList(); 
+  }
+}
+
 // ==========================================
-// FORM PILIH WARUNG (KOTAK-KOTAK)
+// FITUR TAMBAH & HAPUS WARUNG BARU
 // ==========================================
+async function simpanWarungBaru() {
+  const id = document.getElementById('newKantinId').value.trim().toLowerCase().replace(/\s+/g, '_');
+  const nama = document.getElementById('newKantinName').value.trim();
+  const pass = document.getElementById('newKantinPassword').value.trim();
+  const fileInput = document.getElementById('newKantinImage');
+
+  if (!id || !nama || !pass) {
+    showCustomAlert('Semua kolom teks wajib diisi!', 'error');
+    return;
+  }
+
+  if (fileInput.files.length === 0) {
+    showCustomAlert('Foto warung wajib diupload!', 'error');
+    return;
+  }
+
+  try {
+    // 1. Upload Foto
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `warung_${Date.now()}.${fileExt}`;
+    const filePath = `gambar-warung/${fileName}`; // Folder khusus gambar warung
+
+    const { data: uploadData, error: uploadError } = await sb.storage.from('gambar-menu').upload(filePath, file);
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = sb.storage.from('gambar-menu').getPublicUrl(filePath);
+    const imageUrl = publicUrlData.publicUrl;
+
+    // 2. Simpan ke Database
+    const { error } = await sb.from('kantins').insert([{ 
+      id: id, 
+      nama: nama, 
+      password: pass, 
+      is_open: false, // <-- OTOMATIS TUTUP SAMPAI KASIR LOGIN
+      img_url: imageUrl
+    }]);
+
+    if (error) throw error;
+
+    showCustomAlert('Warung baru berhasil didaftarkan! Silakan login di halaman Kasir untuk membukanya.', 'success');
+    
+    // Reset Form
+    document.getElementById('newKantinId').value = '';
+    document.getElementById('newKantinName').value = '';
+    document.getElementById('newKantinPassword').value = '';
+    document.getElementById('newKantinImage').value = '';
+    
+    await fetchKantins();
+    renderAdminFilters(); 
+    renderAdminTable();
+  } catch (err) {
+    showCustomAlert('Gagal: ' + err.message, 'error');
+  }
+}
+
+function renderKantinList() {
+  const tbody = document.getElementById('tableKantin');
+  let html = '';
+  
+  if (Object.keys(KANTIN_NAMES).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#64748b;">Belum ada warung terdaftar.</td></tr>';
+    return;
+  }
+
+  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    html += `
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <img src="${KANTIN_IMAGES[id]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">
+            <div>
+              <b>${name}</b><br><span style="font-size:11px; color:#64748b;">ID: ${id}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <button class="btn-hapus-tabel" onclick="hapusWarung('${id}', '${name}')">Hapus Warung</button>
+        </td>
+      </tr>
+    `;
+  }
+  tbody.innerHTML = html;
+}
+
+async function hapusWarung(id, name) {
+  const yakin = await showCustomConfirm(`Apakah Anda yakin ingin menghapus warung <b>${name}</b> secara permanen? Semua menu di dalamnya juga akan terhapus.`);
+  if (!yakin) return;
+
+  try {
+    // 1. Hapus semua menu di warung ini dulu (biar ga ada error foreign key)
+    await sb.from('menu').delete().eq('kantin_id', id);
+    
+    // 2. Baru hapus warungnya
+    const { error } = await sb.from('kantins').delete().eq('id', id);
+    if (error) throw error;
+
+    showCustomAlert('Warung berhasil dihapus!', 'success');
+    
+    if (selectedKantinForm === id) {
+      selectedKantinForm = '';
+    }
+
+    await initAdminData();
+    renderAdminFilters();
+    renderAdminTable();
+    
+  } catch (err) {
+    showCustomAlert('Gagal menghapus warung: ' + err.message, 'error');
+  }
+}
+// ==========================================
+
 function renderFormKantinPicker() {
   const container = document.getElementById('adminKantinPicker');
   let html = '';
+  
+  if (Object.keys(KANTIN_NAMES).length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#64748b; grid-column: span 2;">Belum ada warung.</p>';
+    return;
+  }
+
   for (const [id, name] of Object.entries(KANTIN_NAMES)) {
     html += `<div class="kantin-btn ${selectedKantinForm === id ? 'active' : ''}" onclick="selectFormKantin('${id}')">${name}</div>`;
   }
@@ -334,14 +448,10 @@ function selectFormKantin(id) {
   renderFormKantinPicker();
 }
 
-// ==========================================
-
 function editMenu(id) {
   const item = allMenuData.find(m => m.id === id);
   if (!item) return;
-
   editMenuId = id; 
-  
   selectedKantinForm = item.kantin_id;
   renderFormKantinPicker();
 
@@ -363,8 +473,7 @@ function editMenu(id) {
 
 function batalEdit() {
   editMenuId = null; 
-  
-  selectedKantinForm = 'warung_nusantara';
+  selectedKantinForm = Object.keys(KANTIN_NAMES)[0] || ''; 
   renderFormKantinPicker();
 
   document.getElementById('menuName').value = '';
@@ -393,6 +502,13 @@ async function simpanMenu() {
   const category = document.getElementById('menuCategory').value;
   const fileInput = document.getElementById('menuImage');
   
+  if (!kantinId) {
+    showCustomAlert('Pilih warung terlebih dahulu!', 'error');
+    btn.textContent = 'Tambah Menu';
+    btn.disabled = false;
+    return;
+  }
+
   if (!name || !desc || !price) {
     showCustomAlert('Nama, Deskripsi, dan Harga wajib diisi!', 'error');
     btn.textContent = editMenuId ? 'Simpan Perubahan' : 'Tambah Menu';
@@ -409,34 +525,20 @@ async function simpanMenu() {
 
   try {
     let imageUrl = null;
-
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
       const filePath = `menu-baru/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await sb.storage
-        .from('gambar-menu')
-        .upload(filePath, file);
-
+      const { data: uploadData, error: uploadError } = await sb.storage.from('gambar-menu').upload(filePath, file);
       if (uploadError) throw uploadError;
-
       const { data: publicUrlData } = sb.storage.from('gambar-menu').getPublicUrl(filePath);
       imageUrl = publicUrlData.publicUrl;
     }
 
-    let dataToSave = {
-      kantin_id: kantinId,
-      name: name,
-      description: desc,
-      price: price,
-      category: category
-    };
-
-    if (imageUrl) {
-      dataToSave.image_url = imageUrl;
-    }
+    let dataToSave = { kantin_id: kantinId, name: name, description: desc, price: price, category: category };
+    if (imageUrl) { dataToSave.image_url = imageUrl; }
 
     if (editMenuId) {
       const { error: updateError } = await sb.from('menu').update(dataToSave).eq('id', editMenuId);
@@ -454,26 +556,20 @@ async function simpanMenu() {
 
   } catch (err) {
     showCustomAlert('Gagal: ' + err.message, 'error');
-    console.error(err);
   } finally {
     btn.textContent = editMenuId ? 'Simpan Perubahan' : 'Tambah Menu';
     btn.disabled = false;
   }
 }
 
-// ==========================================
-// FUNGSI HAPUS MENU (PAKE CUSTOM CONFIRM)
-// ==========================================
 async function hapusMenu(id) {
   if (!id) return;
-
   const yakin = await showCustomConfirm("Apakah Anda yakin ingin menghapus menu ini secara permanen?");
   if (!yakin) return;
 
   try {
     const { error } = await sb.from('menu').delete().eq('id', id);
     if (error) throw error;
-    
     showCustomAlert('Menu berhasil dihapus!', 'success');
     batalEdit(); 
     loadMenu();  
@@ -481,19 +577,12 @@ async function hapusMenu(id) {
     showCustomAlert('Gagal menghapus menu: ' + err.message, 'error');
   }
 }
-// ==========================================
 
-// ==========================================
-// LOGIKA TABEL & SEARCH/FILTER
-// ==========================================
 async function loadMenu() {
   const tbody = document.getElementById('tableMenu');
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
   
-  const { data, error } = await sb.from('menu')
-    .select('*')
-    .order('kantin_id', { ascending: true })
-    .order('name', { ascending: true });
+  const { data, error } = await sb.from('menu').select('*').order('kantin_id', { ascending: true }).order('name', { ascending: true });
   
   if (error || !data) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Gagal memuat data.</td></tr>';
@@ -501,7 +590,6 @@ async function loadMenu() {
   }
 
   allMenuData = data; 
-  
   renderAdminFilters();
   renderAdminTable();
 }
