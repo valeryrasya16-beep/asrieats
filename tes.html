@@ -425,6 +425,29 @@
   </div>
 </div>
 
+<!-- MODAL RATING & ULASAN -->
+<div class="modal-overlay" id="reviewModal" style="z-index: 6000;">
+  <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px 20px;">
+    <button class="close-btn" onclick="closeReviewModal()">✕</button>
+    <div style="font-size: 40px; color: #f59e0b; margin-bottom: 15px;"><i class="fas fa-star"></i></div>
+    <h3 style="font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 10px;">Beri Rating</h3>
+    <p style="color: var(--muted); font-size: 14px; margin-bottom: 15px;">Bagaimana pengalaman Anda memesan di warung ini?</p>
+    
+    <!-- Bintang -->
+    <div id="starRating" style="font-size: 30px; cursor: pointer; margin-bottom: 15px; display: flex; justify-content: center; gap: 5px;">
+      <i class="far fa-star" onclick="setRating(1)" onmouseover="hoverRating(1)" onmouseout="resetHover()"></i>
+      <i class="far fa-star" onclick="setRating(2)" onmouseover="hoverRating(2)" onmouseout="resetHover()"></i>
+      <i class="far fa-star" onclick="setRating(3)" onmouseover="hoverRating(3)" onmouseout="resetHover()"></i>
+      <i class="far fa-star" onclick="setRating(4)" onmouseover="hoverRating(4)" onmouseout="resetHover()"></i>
+      <i class="far fa-star" onclick="setRating(5)" onmouseover="hoverRating(5)" onmouseout="resetHover()"></i>
+    </div>
+    
+    <textarea id="reviewComment" placeholder="Tulis komentar Anda (opsional)..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; margin-bottom: 15px; resize: vertical; min-height: 80px; outline: none;"></textarea>
+    
+    <button class="btn-primary" onclick="submitReview()" id="btnSubmitReview">Kirim Ulasan</button>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer class="site-footer">
   <div class="footer-content">
