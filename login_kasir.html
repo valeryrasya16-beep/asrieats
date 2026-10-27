@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Index - ASRIEATS</title>
+<title>Login Kasir - ASRIEATS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -69,31 +69,37 @@ const SUPABASE_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cXFjYm9jZ3FndmpxeXpjZHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Mjk4OTEsImV4cCI6MjA5MTIwNTg5MX0.T5LZCdR88Bw56ej4I6wMh5NFBM-CWoO6y899DK07sAM";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const KANTIN_NAMES = { 
-  'warung_nusantara': 'Warung Nusantara', 
-  'warung_sederhana': 'Warung Sederhana', 
-  'warung_modern': 'Warung Modern',
-  'warung_bakso_joss': 'Warung Bakso Joss',
-  'warung_mie_ayam': 'Warung Mie Ayam',
-  'warung_wareg': 'Warung Wareg'
-};
-
+// KANTIN_NAMES DINAMIS
+let KANTIN_NAMES = {}; 
 let selectedKantinId = "";
+
+// NARIK DATA WARUNG PAS WEB DIBUKA
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data } = await sb.from('kantins').select('id, nama');
+  if (data) {
+    data.forEach(k => { KANTIN_NAMES[k.id] = k.nama; });
+  }
+});
 
 // --- LOGIKA MODAL KANTIN ---
 function openKantinModal() {
   const list = document.getElementById('kantinOptionsList');
   let html = '';
   
-  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
-    let isActive = (selectedKantinId === id);
-    html += `
-      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantin('${id}', '${name}')">
-        <div class="voucher-opt-title">${name}</div>
-        ${isActive ? '<i class="fas fa-check-circle" style="color:#1a6b4a;"></i>' : ''}
-      </div>
-    `;
+  if (Object.keys(KANTIN_NAMES).length === 0) {
+    html = '<p style="text-align:center; color:#64748b;">Memuat data warung...</p>';
+  } else {
+    for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+      let isActive = (selectedKantinId === id);
+      html += `
+        <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantin('${id}', '${name}')">
+          <div class="voucher-opt-title">${name}</div>
+          ${isActive ? '<i class="fas fa-check-circle" style="color:#1a6b4a;"></i>' : ''}
+        </div>
+      `;
+    }
   }
+  
   list.innerHTML = html;
   document.getElementById('kantinModal').classList.add('active');
 }
@@ -127,6 +133,9 @@ async function loginKasir() {
   
   if (error || !data) { err.textContent="Warung tidak ditemukan"; err.style.display='block'; return; }
   if (data.password !== pw) { err.textContent="Password salah!"; err.style.display='block'; return; }
+
+  // --- BUKA WARUNG OTOMATIS SAAT LOGIN ---
+  await sb.from('kantins').update({ is_open: true }).eq('id', kantin);
 
   sessionStorage.setItem('kasir_name', name);
   sessionStorage.setItem('kantin_id', kantin);
