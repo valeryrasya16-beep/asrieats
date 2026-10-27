@@ -6,6 +6,7 @@ if (!USER_ID) { window.location.href = 'index.html'; }
 
 let menu = [], cart = [], orderData = {}, activeCat = 'semua', activeKantin = null;
 let activeSearchQuery = ''; 
+let activeKantinIsOpen = true; 
 let currentUserPoints = 0; 
 let activeVoucher = null; 
 let activeVoucherPoints = 0; 
@@ -16,16 +17,16 @@ let isAddingFromMenu = false;
 let currentCartIndexToEdit = null; 
 let currentOrderType = null; 
 let menuChannel = null; 
+let kantinStatusChannel = null; 
 
-// Variabel penampung sementara buat level pedas
 let tempSpicyLevel = null;
-
-// Variabel buat nyimpen email baru sementara
 let pendingNewEmail = null; 
 
-// ==========================================
-// LOGIKA PENYIMPANAN NOTIFIKASI
-// ==========================================
+// Variabel untuk Rating
+let currentReviewOrder = null;
+let currentKantinId = null;
+let selectedRating = 0;
+
 function getNotifStorageKey() {
   return USER_ROLE === 'guest' ? 'notif_guest' : 'notif_user_' + USER_ID;
 }
@@ -44,7 +45,6 @@ function saveNotifications() {
     localStorage.setItem(getNotifStorageKey(), JSON.stringify(notifications));
   }
 }
-// ==========================================
 
 const voiceAudio = new Audio('https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/suara/ttsmaker-file-2026-10-26-12-22-20.mp3');
 voiceAudio.preload = 'auto';
@@ -58,51 +58,25 @@ function isUserEligibleForPoints() {
   return USER_ROLE === 'mahasiswa' || USER_ROLE === 'pelanggan';
 }
 
-const KANTIN_NAMES = { 
-  'warung_nusantara': 'Warung Nusantara', 
-  'warung_sederhana': 'Warung Sederhana', 
-  'warung_modern': 'Warung Modern',
-  'warung_bakso_joss': 'Warung Bakso Joss',
-  'warung_mie_ayam': 'Warung Mie Ayam',
-  'warung_wareg': 'Warung Wareg'
-};
+// KANTIN_NAMES & IMAGES DINAMIS
+let KANTIN_NAMES = {}; 
+let KANTIN_IMAGES = {}; 
 
 const BUCKET_URL = "https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/";
 const IMAGE_MAP = {
-  'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg',
-  'Nasi Bakar Ayam S': 'nasi bakar.jpg',
-  'Nasi Bakar Ayam L': 'nasi bakar.jpg',
-  'Nasi Bakar Ayam XL': 'nasi bakar.jpg',
-  'Nasi Bakar Usus S': 'nasi bakar usus .jpg',
-  'Nasi Bakar Usus L': 'nasi bakar usus .jpg',
-  'Nasi Bakar Usus XL': 'nasi bakar usus .jpg',
-  'Mineral': 'air mineral.jpg',
-  'Nasi Ayam Bakar': 'nasi ayam bakar.jpg',
-  'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg',
-  'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg',
-  'Es Teh': 'Es Teh..jpg',
-  'Dimsum': 'Dimsum.jpg',
+  'Nasi Bakar Tuna S': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna L': 'nasi bakar tuna.jpg', 'Nasi Bakar Tuna XL': 'nasi bakar tuna.jpg',
+  'Nasi Bakar Ayam S': 'nasi bakar.jpg', 'Nasi Bakar Ayam L': 'nasi bakar.jpg', 'Nasi Bakar Ayam XL': 'nasi bakar.jpg',
+  'Nasi Bakar Usus S': 'nasi bakar usus .jpg', 'Nasi Bakar Usus L': 'nasi bakar usus .jpg', 'Nasi Bakar Usus XL': 'nasi bakar usus .jpg',
+  'Mineral': 'air mineral.jpg', 'Nasi Ayam Bakar': 'nasi ayam bakar.jpg', 'Nasi Ikan Bakar': 'Nasi Ikan Bakar.jpg',
+  'Nasi Bebek Bakar': 'Nasi Bebek Bakar.jpg', 'Es Teh': 'Es Teh..jpg', 'Dimsum': 'Dimsum.jpg',
   'Spaghetti Carbonara': 'Resep-Spaghetti-Carbonara-Gurih-dan-Creamy-Ala-Restoran-Italia-.jpg.webp',       
   'Spaghetti Aglio e Olio': '28111939213_fc18b29d8f_o.jpg',    
   'Spaghetti Bolognese': 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Spaghetti.jpg',
-  'Kroket': 'Kroket.jpg',
-  'Mini Pizza': 'Mini Pizza.jpg',
-  'Bakso Kecil': 'mie bakso kecil.jpg',
-  'Bakso Besar': 'Bakso Biasa.jpg',
-  'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg',
-  'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp',
-  'Mie Ayam': 'Mie Ayam Biasa.jpg',
-  'Mie Ayam + Bakso': 'mie ayam + bakso.jpg',
-  'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg',
-  'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg',
-  'Nasi Goreng': 'Nasi Goreng..jpg',
-  'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg',
-  'Mie Goreng': 'Mie Goreng..jpg',
-  'Mie Goreng Seafood': 'mie goreng seafood.jpg',
-  'Mie Rebus': 'mie rebus.jpg',
-  'Kwetiau': 'Kwetiau Goreng.jpg'
+  'Kroket': 'Kroket.jpg', 'Mini Pizza': 'Mini Pizza.jpg', 'Bakso Kecil': 'mie bakso kecil.jpg', 'Bakso Besar': 'Bakso Biasa.jpg',
+  'Bakso Kecil + Tetelan': 'Bakso + Tetelan.jpg', 'Bakso Besar + Tetelan': 'bakso besar tetelan rill.webp',
+  'Mie Ayam': 'Mie Ayam Biasa.jpg', 'Mie Ayam + Bakso': 'mie ayam + bakso.jpg', 'Mie Ayam + Pangsit Rebus': 'mie ayam pangsit rebus ril.jpeg',
+  'Mie Ayam + Bakso + Pangsit': 'Mie Ayam Bakso & Pangsit..jpg', 'Nasi Goreng': 'Nasi Goreng..jpg', 'Nasi Goreng + Ati Ampela': 'Nasi Goreng Ati Ampela..jpg',
+  'Mie Goreng': 'Mie Goreng..jpg', 'Mie Goreng Seafood': 'mie goreng seafood.jpg', 'Mie Rebus': 'mie rebus.jpg', 'Kwetiau': 'Kwetiau Goreng.jpg'
 };
 
 function getImageUrl(menuName) {
@@ -115,13 +89,25 @@ function getImageUrl(menuName) {
 }
 
 const KANTIN_DATA_HOME = [
-  { id: 'warung_nusantara', title: 'Warung Nusantara', loc: 'Taman Asri, Kios 1', desc: 'Spesialis nasi bakar dengan aneka isian lezat. Tersedia porsi S, L, dan XL untuk memuaskan selera Anda.', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Nusantara.png' },
-  { id: 'warung_sederhana', title: 'Warung Sederhana', loc: 'Taman Asri, Kios 2', desc: 'Menu masakan rumahan dengan bumbu bakar khas. Nikmati Ayam, Ikan, atau Bebek Bakar dengan harga bersahabat.', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Sederhana.png' },
-  { id: 'warung_modern', title: 'Warung Modern', loc: 'Taman Asri, Kios 3', desc: 'Pilihan tepat untuk pecinta kuliner barat dan camilan. Tersedia dimsum, spaghetti, hingga mini pizza.', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Modern.png' },
-  { id: 'warung_bakso_joss', title: 'Warung Bakso Joss', loc: 'Taman Asri, Kios 4', desc: 'Bakso sapi kenyal dengan kuah kaldu gurih. Bisa tambah tetelan untuk rasa yang lebih mantap!', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Bakso%20Joss.png' },
-  { id: 'warung_mie_ayam', title: 'Warung Mie Ayam', loc: 'Taman Asri, Kios 5', desc: 'Mie ayam klasik dengan topping bakso dan pangsit. Porsi pas untuk makan siang mahasiswa.', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Mie%20Ayam.png' },
-  { id: 'warung_wareg', title: 'Warung Wareg', loc: 'Taman Asri, Kios 6', desc: 'Solusi lapar dengan nasi goreng dan mie pilihan. Tersedia varian seafood dan ati ampela yang menggugah selera.', img: 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Wareg.png' }
+  { id: 'warung_nusantara', title: 'Warung Nusantara', loc: 'Taman Asri, Kios 1', desc: 'Spesialis nasi bakar dengan aneka isian lezat. Tersedia porsi S, L, dan XL untuk memuaskan selera Anda.' },
+  { id: 'warung_sederhana', title: 'Warung Sederhana', loc: 'Taman Asri, Kios 2', desc: 'Menu masakan rumahan dengan bumbu bakar khas. Nikmati Ayam, Ikan, atau Bebek Bakar dengan harga bersahabat.' },
+  { id: 'warung_modern', title: 'Warung Modern', loc: 'Taman Asri, Kios 3', desc: 'Pilihan tepat untuk pecinta kuliner barat dan camilan. Tersedia dimsum, spaghetti, hingga mini pizza.' },
+  { id: 'warung_bakso_joss', title: 'Warung Bakso Joss', loc: 'Taman Asri, Kios 4', desc: 'Bakso sapi kenyal dengan kuah kaldu gurih. Bisa tambah tetelan untuk rasa yang lebih mantap!' },
+  { id: 'warung_mie_ayam', title: 'Warung Mie Ayam', loc: 'Taman Asri, Kios 5', desc: 'Mie ayam klasik dengan topping bakso dan pangsit. Porsi pas untuk makan siang mahasiswa.' },
+  { id: 'warung_wareg', title: 'Warung Wareg', loc: 'Taman Asri, Kios 6', desc: 'Solusi lapar dengan nasi goreng dan mie pilihan. Tersedia varian seafood dan ati ampela yang menggugah selera.' }
 ];
+
+async function fetchDynamicKantins() {
+  const { data } = await sb.from('kantins').select('id, nama, img_url');
+  if (data) {
+    KANTIN_NAMES = {}; 
+    KANTIN_IMAGES = {};
+    data.forEach(k => { 
+      KANTIN_NAMES[k.id] = k.nama; 
+      KANTIN_IMAGES[k.id] = k.img_url || 'https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Nusantara.png'; 
+    });
+  }
+}
 
 function fmt(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
 function showToast(msg) { const t = document.getElementById('toast'); if(t) { t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); } }
@@ -168,9 +154,6 @@ window.addEventListener('popstate', (event) => {
   }
 });
 
-// ==========================================
-// LOGIKA NOTIFIKASI (LONCENG)
-// ==========================================
 function updateNotifBadge() {
   const badge = document.getElementById('notifBadge');
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -226,24 +209,38 @@ function closeNotificationModal() {
   document.getElementById('notificationModal').classList.remove('active');
 }
 
-// ==========================================
-
 function renderHomeCards() {
   const grid = document.getElementById('homeCanteenGrid');
   if (!grid) return;
-  grid.innerHTML = KANTIN_DATA_HOME.map(k => `
-    <div class="canteen-card">
-      <div class="canteen-img-wrapper">
-        <img src="${k.img}" alt="${k.title}">
+  
+  let html = '';
+  for (const [id, name] of Object.entries(KANTIN_NAMES)) {
+    const hardcoded = KANTIN_DATA_HOME.find(k => k.id === id) || {
+      loc: 'Taman Asri',
+      desc: 'Warung di Taman Asri.'
+    };
+
+    let imgUrl = KANTIN_IMAGES[id];
+
+    if (imgUrl && imgUrl.includes('http')) {
+      imgUrl = imgUrl + '?t=' + new Date().getTime();
+    }
+
+    html += `
+      <div class="canteen-card">
+        <div class="canteen-img-wrapper">
+          <img src="${imgUrl}" alt="${name}" onerror="this.src='https://bwqqcbocgqgvjqyzcdrv.supabase.co/storage/v1/object/public/gambar-menu/Warung%20Nusantara.png'">
+        </div>
+        <div class="canteen-info">
+          <div class="canteen-title">${name}</div>
+          <div class="canteen-loc"><i class="fas fa-map-marker-alt"></i> ${hardcoded.loc}</div>
+          <p class="canteen-desc">${hardcoded.desc}</p>
+          <button class="btn-primary" onclick="pesanDariBeranda('${id}')" style="margin-top: 15px;">Pesan di ${name}</button>
+        </div>
       </div>
-      <div class="canteen-info">
-        <div class="canteen-title">${k.title}</div>
-        <div class="canteen-loc"><i class="fas fa-map-marker-alt"></i> ${k.loc}</div>
-        <p class="canteen-desc">${k.desc}</p>
-        <button class="btn-primary" onclick="pesanDariBeranda('${k.id}')" style="margin-top: 15px;">Pesan di ${k.title}</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }
+  grid.innerHTML = html;
 }
 
 function pesanDariBeranda(kantinId) {
@@ -280,9 +277,17 @@ function updateKantinDisplay(kantinId) {
   }
 }
 
-function openKantinModal() {
+let allKantinsStatus = {}; 
+
+async function openKantinModal() {
   const searchInput = document.getElementById('searchKantinInput');
   if (searchInput) searchInput.value = ''; 
+
+  const { data } = await sb.from('kantins').select('id, is_open');
+  if (data) {
+    data.forEach(k => { allKantinsStatus[k.id] = k.is_open !== false; });
+  }
+
   renderKantinOptions(''); 
   document.getElementById('kantinModal').classList.add('active');
 }
@@ -302,10 +307,13 @@ function renderKantinOptions(query = '') {
     if (!name.toLowerCase().includes(q)) continue; 
 
     let isActive = (activeKantin === id);
+    let isClosed = allKantinsStatus[id] === false;
+    let closedLabel = isClosed ? ` <span style="color:#dc4a3d; font-size:10px; font-weight:bold; background:#fee2e2; padding:2px 5px; border-radius:4px; margin-top:5px; display:inline-block;">TUTUP</span>` : '';
     
     html += `
-      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantinFromModal('${id}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 10px; text-align: center; gap: 8px; cursor: pointer;">
+      <div class="voucher-opt ${isActive ? 'active' : ''}" onclick="selectKantinFromModal('${id}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px 10px; text-align: center; gap: 8px; cursor: pointer; ${isClosed ? 'opacity: 0.7; background: #fff1f2;' : ''}">
         <div class="voucher-opt-title" style="font-size: 13px; margin-bottom: 0; line-height: 1.2;">${name}</div>
+        ${closedLabel}
         ${isActive ? '<i class="fas fa-check-circle" style="color:var(--green); font-size: 18px;"></i>' : '<i class="fas fa-store" style="color:var(--muted); font-size: 18px; opacity: 0.4;"></i>'}
       </div>
     `;
@@ -386,9 +394,6 @@ function selectVoucherFromModal(persen, pointsUsed) {
   renderCart();
 }
 
-// ==========================================
-// LOGIKA PILIH PEDAS
-// ==========================================
 function openSpicyModal() {
   let currentLevel = null; 
   if (!isAddingFromMenu && currentCartIndexToEdit !== null && cart[currentCartIndexToEdit]) {
@@ -458,7 +463,6 @@ function closeSpicyModal() {
   isAddingFromMenu = false;
   tempSpicyLevel = null;
 }
-// ==========================================
 
 async function openProfileModal() {
   document.getElementById('profileModal').classList.add('active');
@@ -487,6 +491,10 @@ async function openProfileModal() {
     return;
   }
 
+  // Ambil daftar order_id yang udah di-review sama user ini
+  const { data: reviewsData } = await sb.from('reviews').select('order_id').eq('user_id', USER_ID);
+  const reviewedOrders = new Set(reviewsData?.map(r => r.order_id) || []);
+
   list.innerHTML = data.map(o => {
     const d = new Date(o.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
     let itemDetails = '';
@@ -508,9 +516,20 @@ async function openProfileModal() {
       }).join('');
     }
 
+    // TOMBOL RATING
+    const hasReviewed = reviewedOrders.has(o.id);
+    let reviewBtn = '';
+    if (o.status === 'Selesai') {
+      if (hasReviewed) {
+        reviewBtn = `<span style="color:var(--green); font-size:12px; font-weight:600;"><i class="fas fa-check-circle"></i> Sudah diulas</span>`;
+      } else {
+        reviewBtn = `<button onclick="openReviewModal(${o.id}, '${o.kantin_id}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="fas fa-star"></i> Beri Rating</button>`;
+      }
+    }
+
     return `
       <div class="history-item" style="padding-bottom: 15px; border-bottom: 1px dashed var(--border); margin-bottom: 15px;">
-        <div class="history-header" style="margin-bottom: 5px;">
+        <div class="history-header" style="margin-bottom: 5px; display:flex; justify-content:space-between;">
           <span style="color:var(--primary); font-weight:600;">${KANTIN_NAMES[o.kantin_id] || o.kantin_id}</span>
           <span style="color:var(--green); font-weight:700;">${fmt(o.total_amount)}</span>
         </div>
@@ -525,7 +544,9 @@ async function openProfileModal() {
             <span>${fmt(o.total_amount)}</span>
           </div>
         </div>
-        <div style="display:flex; justify-content:flex-end; margin-top: 10px;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 10px;">
+          <div>${reviewBtn}</div>
           <button onclick="hapusRiwayat(${o.id})" style="background:none; border:none; color:var(--red, #dc4a3d); cursor:pointer; padding:5px; font-size:12px; display:flex; align-items: center; gap:5px;">
             <i class="fas fa-trash"></i> Hapus
           </button>
@@ -773,6 +794,7 @@ async function loadKantin(kantinId) {
   activeVoucher = null;
   activeVoucherPoints = 0;
   currentCartIndexToEdit = null; 
+  activeKantinIsOpen = true; 
   
   updateKantinDisplay(activeKantin);
 
@@ -795,6 +817,12 @@ async function loadKantin(kantinId) {
   if (searchInput) searchInput.value = '';
 
   document.getElementById('menuGrid').innerHTML = '<div style="text-align:center; padding:3rem;">Memuat menu...</div>';
+  
+  const { data: kantinData } = await sb.from('kantins').select('is_open').eq('id', activeKantin).single();
+  if (kantinData) {
+    activeKantinIsOpen = kantinData.is_open !== false; 
+  }
+
   menu = await getMenu(activeKantin);
   fetchUserData(); 
   
@@ -825,25 +853,38 @@ function renderMenu(cat) {
     filtered = filtered.filter(m => m.name.toLowerCase().includes(q));
   }
 
+  let bannerHtml = '';
+  if (!activeKantinIsOpen) {
+    bannerHtml = `
+      <div style="grid-column: 1 / -1; background: #FEE2E2; color: #DC4A3D; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold; border: 1px solid #FECACA;">
+        <i class="fas fa-store-slash" style="font-size: 30px; margin-bottom: 10px; display: block;"></i>
+        Mohon Maaf, Warung Sedang TUTUP / LIBUR.<br>
+        <span style="font-size: 13px; font-weight: normal; margin-top: 5px; display: block;">Anda belum bisa memesan untuk saat ini. Silakan cek kembali nanti.</span>
+      </div>
+    `;
+  }
+
   if (filtered.length === 0) { 
-    grid.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--muted);"><i class="fas fa-search" style="font-size:30px; margin-bottom:10px;"></i><br>Menu tidak ditemukan.</div>'; 
+    grid.innerHTML = bannerHtml + '<div style="text-align:center; padding:3rem; color:var(--muted);"><i class="fas fa-search" style="font-size:30px; margin-bottom:10px;"></i><br>Menu tidak ditemukan.</div>'; 
     return; 
   }
 
-  grid.innerHTML = filtered.map(item => {
+  const menuHtml = filtered.map(item => {
     const imgUrl = item.image_url ? item.image_url : getImageUrl(item.name);
     const points = item.price < 10000 ? 1 : (item.price <= 20000 ? 2 : 3);
     const isAvailable = item.is_available !== false; 
+    
     const pointBadge = isUserEligibleForPoints() ? `<span style="background: #FFF3E0; color: #E65100; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap;">+${points} 🪙</span>` : '';
     const habisBadge = !isAvailable ? `<span style="background: #FEE2E2; color: #DC4A3D; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap;">Habis</span>` : '';
-    const btnHtml = isAvailable 
-      ? `<button class="add-btn" onclick="addToCart(${item.id})">Tambah</button>`
-      : `<button class="add-btn" style="background:#cbd5e1; cursor:not-allowed;" disabled>Habis</button>`;
+    
+    const btnHtml = (!isAvailable || !activeKantinIsOpen)
+      ? `<button class="add-btn" style="background:#cbd5e1; cursor:not-allowed;" disabled>${!activeKantinIsOpen ? 'Tutup' : 'Habis'}</button>`
+      : `<button class="add-btn" onclick="addToCart(${item.id})">Tambah</button>`;
 
     return `
-    <div class="menu-card" style="${!isAvailable ? 'opacity: 0.7;' : ''}">
+    <div class="menu-card" style="${(!isAvailable || !activeKantinIsOpen) ? 'opacity: 0.7;' : ''}">
       <div class="menu-img">
-        <img src="${imgUrl}" alt="${item.name}" style="${!isAvailable ? 'filter: grayscale(100%);' : ''}" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop'">
+        <img src="${imgUrl}" alt="${item.name}" style="${(!isAvailable || !activeKantinIsOpen) ? 'filter: grayscale(100%);' : ''}" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop'">
       </div>
       <div class="menu-name">${item.name}</div>
       <div class="menu-desc">${item.description}</div>
@@ -854,6 +895,8 @@ function renderMenu(cat) {
       ${btnHtml}
     </div>
   `}).join('');
+
+  grid.innerHTML = bannerHtml + menuHtml;
 }
 
 function filterCat(cat, el) {
@@ -865,6 +908,11 @@ function filterCat(cat, el) {
 }
 
 function addToCart(id) {
+  if (!activeKantinIsOpen) {
+    showToast('Warung sedang tutup, tidak bisa memesan.');
+    return;
+  }
+
   const item = menu.find(m => m.id == id);
   
   if (item.is_available === false) {
@@ -1037,6 +1085,11 @@ function setOrderType(type) {
 }
 
 function proceedToPayment() {
+  if (!activeKantinIsOpen) {
+    showToast('Warung sedang tutup, tidak bisa memesan.');
+    return;
+  }
+
   const name = document.getElementById('namaInput').value.trim();
   let meja = document.getElementById('mejaInput').value.trim();
 
@@ -1203,9 +1256,6 @@ function resetAll() {
   updateCartBadge(); showPage('menuPage');
 }
 
-// ==========================================
-// REALTIME NOTIFIKASI PESANAN (DINE IN & TAKE AWAY)
-// ==========================================
 function initOrderStatusListener() {
   sb.channel('order-status-' + USER_ID)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${USER_ID}` }, (payload) => {
@@ -1278,27 +1328,20 @@ function initOrderStatusListener() {
     .subscribe();
 }
 
-// ==========================================
-// REALTIME UPDATE MENU (INSERT, UPDATE, DELETE)
-// ==========================================
 function initMenuRealtimeListener(kantinId) {
   if (menuChannel) {
     sb.removeChannel(menuChannel);
   }
 
-  // Dengarkan SEMUA event (INSERT, UPDATE, DELETE) di tabel menu
   menuChannel = sb.channel('menu-status-' + kantinId)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'menu', filter: `kantin_id=eq.${kantinId}` }, async (payload) => {
       
-      // Ambil data menu terbaru dari server
       const updatedMenuData = await getMenu(kantinId);
       
-      // Kalau datanya ada, update variabel global dan render ulang
       if (updatedMenuData) {
         menu = updatedMenuData;
         renderMenu(activeCat);
 
-        // Kasih notifikasi kecil di pojok layar
         if (payload.eventType === 'INSERT') {
           showToast(`✅ Menu baru telah ditambahkan!`);
         } else if (payload.eventType === 'UPDATE') {
@@ -1311,10 +1354,163 @@ function initMenuRealtimeListener(kantinId) {
     .subscribe();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// ==========================================
+// REALTIME GLOBAL: UPDATE SEMUA STATUS WARUNG & TAMBAH WARUNG BARU
+// ==========================================
+function initGlobalKantinStatusListener() {
+  if (kantinStatusChannel) {
+    sb.removeChannel(kantinStatusChannel);
+  }
+
+  // Ganti event jadi '*' biar nangkep INSERT (baru), UPDATE, dan DELETE
+  kantinStatusChannel = sb.channel('global-kantin-status')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'kantins' }, async (payload) => {
+      
+      const changedKantinId = payload.new ? payload.new.id : null;
+      const isOpen = payload.new ? (payload.new.is_open !== false) : false;
+
+      // 1. JIKA ADA WARUNG BARU DITAMBAHKAN (INSERT)
+      if (payload.eventType === 'INSERT') {
+        await fetchDynamicKantins(); // Tarik ulang data terbaru dari DB
+        renderHomeCards(); // Render ulang card di beranda
+        
+        // Update modal pilih warung kalau lagi kebuka
+        const modal = document.getElementById('kantinModal');
+        if (modal && modal.classList.contains('active')) {
+           const searchInput = document.getElementById('searchKantinInput');
+           const currentQuery = searchInput ? searchInput.value : '';
+           renderKantinOptions(currentQuery);
+        }
+        
+        showToast(`✅ Warung baru (${payload.new.nama}) telah dibuka!`);
+        return; // Berhenti di sini, gausah lanjut ke logic bawah
+      }
+
+      // 2. JIKA STATUS / DATA WARUNG DIUBAH (UPDATE)
+      if (payload.eventType === 'UPDATE') {
+        // TAMBAHAN: Tarik data & render ulang beranda biar gambar/nama baru langsung muncul
+        await fetchDynamicKantins();
+        renderHomeCards();
+
+        allKantinsStatus[changedKantinId] = isOpen;
+
+        const modal = document.getElementById('kantinModal');
+        if (modal && modal.classList.contains('active')) {
+           const searchInput = document.getElementById('searchKantinInput');
+           const currentQuery = searchInput ? searchInput.value : '';
+           renderKantinOptions(currentQuery);
+        }
+
+        if (activeKantin === changedKantinId) {
+          activeKantinIsOpen = isOpen;
+          renderMenu(activeCat); 
+          
+          if (!isOpen) {
+            showToast(`⚠️ Warung ${KANTIN_NAMES[changedKantinId]} baru saja TUTUP.`);
+          } else {
+            showToast(`✅ Warung ${KANTIN_NAMES[changedKantinId]} sudah BUKA kembali.`);
+          }
+        }
+      }
+
+      // 3. JIKA WARUNG DIHAPUS (DELETE)
+      if (payload.eventType === 'DELETE') {
+        await fetchDynamicKantins(); // Tarik ulang data
+        renderHomeCards();
+        
+        const modal = document.getElementById('kantinModal');
+        if (modal && modal.classList.contains('active')) {
+           const searchInput = document.getElementById('searchKantinInput');
+           const currentQuery = searchInput ? searchInput.value : '';
+           renderKantinOptions(currentQuery);
+        }
+        showToast(`❌ Ada warung yang telah dihapus.`);
+      }
+    })
+    .subscribe();
+}
+
+// ==========================================
+// LOGIKA RATING & ULASAN
+// ==========================================
+function openReviewModal(orderId, kantinId) {
+  currentReviewOrder = orderId;
+  currentKantinId = kantinId;
+  selectedRating = 0;
+  document.getElementById('reviewComment').value = '';
+  renderStars();
+  document.getElementById('reviewModal').classList.add('active');
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').classList.remove('active');
+}
+
+function hoverRating(val) {
+  for(let i=1; i<=5; i++) {
+    const star = document.getElementById('starRating').children[i-1];
+    star.className = i <= val ? 'fas fa-star' : 'far fa-star';
+    star.style.color = i <= val ? '#f59e0b' : '#cbd5e1';
+  }
+}
+
+function resetHover() {
+  renderStars();
+}
+
+function setRating(val) {
+  selectedRating = val;
+  renderStars();
+}
+
+function renderStars() {
+  for(let i=1; i<=5; i++) {
+    const star = document.getElementById('starRating').children[i-1];
+    star.className = i <= selectedRating ? 'fas fa-star' : 'far fa-star';
+    star.style.color = i <= selectedRating ? '#f59e0b' : '#cbd5e1';
+  }
+}
+
+async function submitReview() {
+  if (selectedRating === 0) {
+    showToast('Pilih bintang terlebih dahulu!');
+    return;
+  }
+  
+  const comment = document.getElementById('reviewComment').value.trim();
+  const btn = document.getElementById('btnSubmitReview');
+  btn.disabled = true;
+  btn.textContent = 'Mengirim...';
+
+  try {
+    const { error } = await sb.from('reviews').insert([{
+      order_id: currentReviewOrder,
+      kantin_id: currentKantinId,
+      user_id: USER_ID,
+      rating: selectedRating,
+      comment: comment
+    }]);
+
+    if (error) throw error;
+    showToast('Terima kasih atas ulasan Anda!');
+    closeReviewModal();
+    openProfileModal(); // Refresh tampilan history biar berubah jadi "Sudah diulas"
+  } catch (err) {
+    showCustomAlert('Gagal mengirim ulasan: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Kirim Ulasan';
+  }
+}
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', async () => {
   if (!history.state) {
     history.replaceState({ page: 'homePage' }, '', '#homePage');
   }
+
+  // Narik data warung dulu sebelum ngerender apapun
+  await fetchDynamicKantins();
 
   document.getElementById('navUserName').textContent = USER_NAME;
   renderHomeCards();
@@ -1331,6 +1527,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { once: true });
 
   initOrderStatusListener();
+  initGlobalKantinStatusListener(); 
 
   const slides = document.querySelectorAll('.hero-bg');
   if (slides.length > 0) {
